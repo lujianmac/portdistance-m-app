@@ -1,0 +1,47 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'Login',
+    subtitle: 'Log in to continue planning voyages and voyage estimations.',
+    email: 'E-mail',
+    emailPlaceholder: 'Enter email address',
+    password: 'Password',
+    passwordPlaceholder: 'Enter password',
+    togglePassword: 'Toggle password visibility',
+    submit: 'Log In',
+    forgotPassword: 'Forgotten Your Password?',
+    register: 'Create an account',
+    failed: 'Login failed, please try again later',
+  },
+  // Register page
+  register: {
+    title: 'Sign Up',
+    email: 'E-mail',
+    emailPlaceholder: 'Enter email address',
+    nickname: 'Nickname (optional)',
+    nicknamePlaceholder: 'Enter nickname',
+    code: 'Email verification code',
+    codePlaceholder: 'Enter verification code',
+    sendCode: 'Send code',
+    password: 'Password',
+    passwordPlaceholder: '6–16 characters',
+    submit: 'Sign Up and Log In',
+    sendCodeFailed: 'Email sending failed',
+    failed: 'Sign up failed',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'Reset Password',
+    email: 'Login email',
+    emailPlaceholder: 'Enter email address',
+    code: 'Email verification code',
+    codePlaceholder: 'Enter verification code',
+    sendCode: 'Send code',
+    password: 'New Password',
+    passwordPlaceholder: '6–16 characters',
+    submit: 'Reset Password',
+    sendCodeFailed: 'Email sending failed',
+    failed: 'Password reset failed',
+  },
+}

@@ -1,0 +1,227 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: #f5f7fa;
+}
+
+ion-app {
+  --ion-safe-area-top: env(safe-area-inset-top, 0px);
+  --ion-safe-area-right: env(safe-area-inset-right, 0px);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --ion-safe-area-left: env(safe-area-inset-left, 0px);
+}
+
+body {
+  color: #172b3a;
+  font-family: var(--ion-font-family);
+  letter-spacing: 0;
+}
+
+ion-content {
+  --background: #f5f7fa;
+}
+
+ion-list[inset] {
+  margin-inline: 0;
+}
+
+ion-header ion-toolbar {
+  --border-width: 0 0 1px;
+  --border-color: #dce5eb;
+}
+
+ion-tab-bar {
+  --height: 56px;
+  --ion-safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  min-height: 56px;
+}
+
+ion-button {
+  letter-spacing: 0;
+}
+
+/* iOS zooms the WebView when the focused native input is smaller than 16px. */
+ion-input,
+ion-textarea,
+ion-searchbar,
+ion-select,
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+ion-input::part(native),
+ion-textarea::part(native),
+ion-searchbar::part(input),
+ion-select::part(text) {
+  font-size: 16px !important;
+}
+
+ion-content::part(scroll) {
+  overscroll-behavior-y: contain;
+}
+
+/* `fill` is passed to the Ionic components as a DOM property (not reflected to an
+   attribute), so the outline controls are matched by the class Ionic renders. */
+ion-input.input-fill-outline,
+ion-textarea.textarea-fill-outline,
+ion-select.select-fill-outline {
+  --highlight-color-focused: #006c8c;
+  --highlight-color-invalid: #b42318;
+  --border-radius: 7px;
+  min-height: 56px;
+}
+
+/* Ionic only paints the `fill="outline"` border in `md` mode, which leaves the
+   field borderless in `ios` mode. Draw the same 1px outline on the host element
+   there, reusing the component's own `--border-color` so focus/invalid states
+   keep working. */
+ion-input.input-fill-outline:not(.md),
+ion-textarea.textarea-fill-outline:not(.md),
+ion-select.select-fill-outline:not(.md) {
+  border: 1px solid var(--border-color, #cbd9e5);
+  border-radius: var(--border-radius, 7px);
+}
+
+.page-content {
+  --padding-top: 12px;
+  --padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.page-card {
+  margin: 0 0 12px;
+  border: 1px solid #dce5eb;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.page-card ion-card-header {
+  padding: 16px 16px 8px;
+}
+
+.page-card ion-card-content {
+  padding: 8px 16px 16px;
+}
+
+.page-card-title {
+  margin: 0;
+  color: #173447;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 52vh;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-state-inner {
+  width: min(100%, 360px);
+}
+
+.empty-state h2 {
+  margin: 14px 0 8px;
+  color: #173447;
+  font-size: 20px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.inline-error {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #e0e8ed;
+  border-radius: 6px;
+  background: #e0e8ed;
+}
+
+.metric-grid > div {
+  min-width: 0;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.metric-grid small,
+.metric-grid strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-grid small {
+  color: #6b7c8d;
+  font-size: 12px;
+}
+
+.metric-grid strong {
+  margin-top: 5px;
+  color: #173447;
+  font-size: 16px;
+}
+
+.profit-positive {
+  color: #17815d !important;
+}
+
+.profit-negative {
+  color: #b42318 !important;
+}
+
+.offline-banner {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  left: 50%;
+  z-index: 10001;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 28px);
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border: 1px solid rgba(130, 82, 8, 0.24);
+  border-radius: 6px;
+  background: #fff6dc;
+  color: #805700;
+  box-shadow: 0 4px 14px rgba(23, 43, 58, 0.14);
+  font-size: 13px;
+}
+
+.offline-banner-enter-active,
+.offline-banner-leave-active {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.offline-banner-enter-from,
+.offline-banner-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -8px);
+}

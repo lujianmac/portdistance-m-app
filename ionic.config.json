@@ -1,0 +1,7 @@
+{
+  "name": "portdistance-m-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

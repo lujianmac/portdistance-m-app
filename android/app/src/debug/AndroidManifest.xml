@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Local Android debug builds may use VITE_NATIVE_API_BASE_URL over HTTP. -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

@@ -1,0 +1,82 @@
+// 我的 tab 及其子页：账户 / 邮箱 / 密码 / 联系我们 / 购买记录
+export default {
+  // 我的
+  tab: {
+    title: '我的',
+    defaultName: 'PortDistance 用户',
+    emailFallback: '未加载账户邮箱',
+    account: '账户信息',
+    email: '修改邮箱',
+    password: '修改密码',
+    ships: '船舶规范',
+    language: '语言',
+    purchases: '购买记录',
+    contact: '联系我们',
+    share: '分享我们',
+    version: '版本',
+    logout: '退出登录',
+    logoutMessage: '确定退出当前账号吗？',
+    logoutConfirm: '退出',
+    shareText: 'PortDistance 航程计算与航次预算工具',
+  },
+  // 账户信息
+  account: {
+    title: '账户信息',
+    nameLabel: '昵称',
+    namePlaceholder: '请输入昵称',
+    emailLabel: '账户邮箱',
+    save: '保存昵称',
+    saved: '昵称已更新',
+  },
+  // 修改邮箱
+  email: {
+    title: '修改邮箱',
+    newEmailLabel: '新邮箱',
+    newEmailPlaceholder: '请输入新邮箱',
+    codeLabel: '邮箱验证码',
+    codePlaceholder: '请输入验证码',
+    sendCode: '获取验证码',
+    codeSent: '验证码已发送',
+    sendCodeFailed: '验证码发送失败',
+    save: '保存邮箱',
+    saved: '邮箱已更新',
+    saveFailed: '邮箱更新失败',
+  },
+  // 修改密码
+  password: {
+    title: '修改密码',
+    oldLabel: '原密码',
+    oldPlaceholder: '请输入原密码',
+    newLabel: '新密码',
+    newPlaceholder: '6 至 16 位密码',
+    save: '保存新密码',
+    updated: '密码已更新',
+  },
+  // 联系我们
+  contact: {
+    title: '联系我们',
+    service: '客服',
+    support: '技术支持',
+    supportDescription: '航程数据、地图使用和技术问题，请联系技术支持。',
+    wechat: '微信',
+    email: '邮箱',
+  },
+  // 购买记录
+  purchases: {
+    title: '购买记录',
+    refresh: '刷新购买记录',
+    loadFailed: '购买记录加载失败',
+    currentSubscription: '当前订阅',
+    validity: '有效期',
+    dateRange: '{start} 至 {end}',
+    defaultPlan: 'PortDistance 服务订阅',
+    noActiveSubscription: '暂无有效订阅',
+    paymentRecords: '支付记录',
+    empty: '暂无购买记录',
+    orderNo: '订单 {no}',
+    alipay: '支付宝',
+    wechatPay: '微信支付',
+    payment: '支付',
+    notRecorded: '未记录时间',
+  },
+}

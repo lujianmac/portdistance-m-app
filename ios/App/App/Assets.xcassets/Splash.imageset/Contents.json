@@ -1,0 +1,20 @@
+{
+  "images" : [
+    {
+      "filename" : "splash1320×2868.png",
+      "idiom" : "iphone"
+    },
+    {
+      "filename" : "1320_en.png",
+      "idiom" : "iphone",
+      "locale" : "en"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "localizable" : true
+  }
+}

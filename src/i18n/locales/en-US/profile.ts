@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'Me',
+    defaultName: 'PortDistance User',
+    emailFallback: 'Email not loaded',
+    account: 'Account Information',
+    email: 'Change Email',
+    password: 'Change Password',
+    ships: 'Vessel Specifications',
+    language: 'Language',
+    purchases: 'Purchase Records',
+    contact: 'Contact Us',
+    share: 'Share App',
+    version: 'Version',
+    logout: 'Logout',
+    logoutMessage: 'Are you sure you want to log out of the current account?',
+    logoutConfirm: 'Log Out',
+    shareText: 'PortDistance voyage calculator and voyage estimation tool',
+  },
+  // Account information
+  account: {
+    title: 'Account Information',
+    nameLabel: 'Nickname',
+    namePlaceholder: 'Enter nickname',
+    emailLabel: 'Account email',
+    save: 'Save Nickname',
+    saved: 'Nickname updated',
+  },
+  // Change email
+  email: {
+    title: 'Change Email',
+    newEmailLabel: 'New Email Address',
+    newEmailPlaceholder: 'Enter new email address',
+    codeLabel: 'Email verification code',
+    codePlaceholder: 'Enter verification code',
+    sendCode: 'Send code',
+    codeSent: 'Verification code sent',
+    sendCodeFailed: 'Email sending failed',
+    save: 'Save Email',
+    saved: 'Email updated',
+    saveFailed: 'Failed to update email',
+  },
+  // Change password
+  password: {
+    title: 'Change Password',
+    oldLabel: 'Current Password',
+    oldPlaceholder: 'Enter current password',
+    newLabel: 'New Password',
+    newPlaceholder: '6–16 characters',
+    save: 'Save New Password',
+    updated: 'Password updated',
+  },
+  // Contact us
+  contact: {
+    title: 'Contact Us',
+    service: 'Customer Service',
+    support: 'Technical Support',
+    supportDescription: 'For voyage data, map usage and technical questions, please contact technical support.',
+    wechat: 'WeChat',
+    email: 'E-mail',
+  },
+  // Purchase records
+  purchases: {
+    title: 'Purchase Records',
+    refresh: 'Refresh purchase records',
+    loadFailed: 'Failed to load purchase records',
+    currentSubscription: 'Current Subscription',
+    validity: 'Valid date',
+    dateRange: '{start} to {end}',
+    defaultPlan: 'PortDistance service subscription',
+    noActiveSubscription: 'No active subscription',
+    paymentRecords: 'Payment Records',
+    empty: 'No purchase records',
+    orderNo: 'Order {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: 'Payment',
+    notRecorded: 'Not recorded',
+  },
+}
