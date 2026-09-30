@@ -164,6 +164,7 @@ export default {
     initFailed: 'Leaflet 初始化失败',
     maritimeEnabledNotice: '{name}已开启，仅供参考，不用于航海导航或法律界定',
     timezoneEnabledNotice: '{name}已开启，仅作时间参考',
+    clearMeasurement: '清除测量',
     measureDistanceHint: '单击添加量程点，双击结束',
     measureAreaHint: '单击添加面积顶点，双击结束',
     totalDistanceLabel: '总里程 {value}',

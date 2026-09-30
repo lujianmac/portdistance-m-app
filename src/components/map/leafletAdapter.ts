@@ -14,6 +14,7 @@ import type { MaritimeLayerId } from '@/components/map/modules/maritime'
 import type { RoutePointConfig } from '@/types/map'
 import type { Port, RoutePathItem, RoutePoint } from '@/types/protocol'
 import { gcj02ToWgs84, wgs84ToGcj02, type MapCoordinateSystem } from '@/components/map/util/coordinate'
+import { defaultMapSource, defaultMapView } from '@/config/region'
 
 export type { LeafletMapCallbacks, MeasureMode } from '@/components/map/controllers/types'
 
@@ -47,14 +48,17 @@ export class LeafletMapAdapter {
 
   async init(callbacks: LeafletMapCallbacks = {}): Promise<void> {
     this.callbacks = callbacks
-    this.basemapConfigs = basemaps()
+    // Domestic (GCJ-02) tiles first for mainland China, global WGS84 elsewhere,
+    // and open the map over the user's own region instead of a fixed China view.
+    this.basemapConfigs = basemaps(defaultMapSource())
     const firstMap = this.basemapConfigs[0]
     this.activeBasemapId = firstMap.id
     this.coordinateSystem = firstMap.coordinateSystem
+    const initialView = defaultMapView()
 
     this.map = L.map(this.container, {
-      center: this.toDisplayLatLng(120, 30),
-      zoom: 2,
+      center: this.toDisplayLatLng(initialView.center[0], initialView.center[1]),
+      zoom: initialView.zoom,
       minZoom: 1,
       maxZoom: 16,
       worldCopyJump: true,
@@ -67,6 +71,13 @@ export class LeafletMapAdapter {
     this.createPanes()
     const map = this.map
     if (!map) throw new Error('Leaflet map initialization failed')
+    /*
+     * The tab page can be created while the container still has no layout size
+     * (fresh tab entry / after the iOS swipe-back destroyed the page). Leaflet
+     * would then compute an absurd zoom for the first fitBounds, which shows up
+     * as "zoomed in extremely far, then jumps back". Measuring first fixes it.
+     */
+    map.invalidateSize(false)
     const coordinates: MapCoordinates = {
       toDisplayCoordinate: (longitude, latitude) => this.toDisplayCoordinate(longitude, latitude),
       toDisplayLatLng: (longitude, latitude) => this.toDisplayLatLng(longitude, latitude),
@@ -79,6 +90,7 @@ export class LeafletMapAdapter {
       pane: 'measure-pane',
       isTurnDragEnabled: () => this.routeLayerController?.getDiagnostics().turnDragEnabled ?? false,
       onNotice: this.callbacks.onMapNotice,
+      onMeasurementChange: (state) => this.callbacks.onMeasurementChange?.(state),
     })
     this.graticuleController = new GraticuleController({
       map,
@@ -268,8 +280,13 @@ export class LeafletMapAdapter {
     this.routeLayerController?.setTrackSegments(segments)
   }
 
-  setRouteData(points: RoutePoint[], segments: RoutePathItem[], turningPoints: RoutePoint[]): void {
-    this.routeLayerController?.setRouteData(points, segments, turningPoints)
+  setRouteData(
+    points: RoutePoint[],
+    segments: RoutePathItem[],
+    turningPoints: RoutePoint[],
+    autoFit = true,
+  ): void {
+    this.routeLayerController?.setRouteData(points, segments, turningPoints, autoFit)
   }
 
   clearRoute(): void {
@@ -294,6 +311,10 @@ export class LeafletMapAdapter {
   }
 
   private readonly handleMapClick = (event: L.LeafletMouseEvent) => {
+    // Buttons floating over the map (e.g. "clear measurement") must never be
+    // treated as a map click by the measurement tool.
+    const target = event.originalEvent?.target as HTMLElement | null
+    if (target && typeof target.closest === 'function' && target.closest('.map-overlay')) return
     if (this.measurementController?.handleMapClick(event)) return
     if (this.meteoQueryMode) {
       const [lon, lat] = this.toBusinessCoordinate(event.latlng.lng, event.latlng.lat)
@@ -373,6 +394,10 @@ export class LeafletMapAdapter {
     return this.measurementController?.setMode(mode) ?? null
   }
 
+  clearMeasurement(): void {
+    this.measurementController?.clearMeasurement()
+  }
+
   setMeteoQueryMode(enabled: boolean): boolean {
     this.meteoQueryMode = enabled
     this.map?.getContainer().classList.toggle('meteo-query-mode-active', enabled)
@@ -423,6 +448,7 @@ export class LeafletMapAdapter {
 
   invalidateSize(): void {
     this.map?.invalidateSize({ animate: false, pan: false })
+    this.routeLayerController?.applyPendingFit()
   }
 
   getDiagnostics() {

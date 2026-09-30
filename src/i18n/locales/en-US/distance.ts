@@ -29,25 +29,26 @@ export default {
     moveDown: 'Move port down',
     remove: 'Remove port',
     originPort: 'Origin',
-    segment: '{distance} nm · {days} days',
   },
   // Recent calculations
   recentCalculations: {
     title: 'Recent calculations',
-    summary: 'Total (ECA) {distance} ({eca}) nm · Sailing {days} days ({speed} knots)',
+    summary: 'Total (ECA) {distance} ({eca}) NM · Sailing {days} days ({speed} knots)',
   },
   // Distance summary
   summary: {
     ariaLabel: 'Distance summary',
     totalDistance: 'Total distance',
-    eca: 'ECAs',
-    ecaWithRate: 'ECAs ({rate}%)',
+    eca: 'ECA',
+    ecaRate: '(0.1%)',
     sailingTime: 'Sailing time',
+    sailingTimeWithSpeed: '{days} days ({speed} knots)',
   },
   // Voyage time
   schedule: {
     ariaLabel: 'Voyage time',
     departureTime: 'Departure time',
+    arrivalTime: 'Arrival time',
     editDeparture: 'Set departure time',
     timeZoneSettings: 'Time zone settings',
     setTimeZone: 'Set time zone',
@@ -58,14 +59,18 @@ export default {
   // Copy / share / convert to estimation
   share: {
     copyResult: 'Copy Result',
+    copyImage: 'Copy image',
+    imageCopied: 'Image copied',
     viewMap: 'View Map',
     budgetAction: 'Create a Voyage Estimation',
     copied: 'Calculation result copied',
+    cardSketchNote: 'Route sketch, for reference only',
+    cardTagline: 'Voyage distance · Voyage estimation',
     title: 'PortDistance Route',
     routeLine: 'Route: {route}',
-    distanceLine: 'Distance: {distance} nm',
-    distanceLineWithEca: 'Distance: {distance} nm (ECA: {eca})',
-    recentDistanceLine: 'Distance: {distance} (ECA: {eca}) nm',
+    distanceLine: 'Distance: {distance} NM',
+    distanceLineWithEca: 'Distance: {distance} NM (ECA: {eca})',
+    recentDistanceLine: 'Distance: {distance} (ECA: {eca}) NM',
     timeLine: 'Time: {days} days at {speed} kn',
   },
   // Coordinate input

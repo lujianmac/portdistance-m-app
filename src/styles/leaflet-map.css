@@ -141,6 +141,15 @@
   color: #b4141e;
 }
 
+/*
+ * 透明命中线：stroke-opacity 为 0 的路径默认不接收指针事件，
+ * 这里用 pointer-events: stroke 让它命中整条描边（图标在更高 pane，不受影响）。
+ */
+.leaflet-pane > svg path.leaflet-route-hit-line.leaflet-interactive {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
 .turn-point-icon span {
   display: block;
   width: 8px;
@@ -149,6 +158,14 @@
   border-radius: 50%;
   background: #960000;
   box-shadow: 0 1px 4px rgba(16, 42, 67, 0.32);
+}
+
+/* 用户新增的转向点用强调色，和航线自带顶点区分开（只有这种能删除） */
+.turn-point-icon-user span {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #b8420f;
+  background: var(--accent, #f26d3d);
 }
 
 .turn-point-icon.selected span {
@@ -417,6 +434,12 @@
 .map-active-layer span:nth-child(2) {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 左侧控制列（缩放按钮）移到垂直中部，顶部留给提示条与工具栏 */
+.leaflet-top.leaflet-left {
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .portdistance-zoom-buttons {
@@ -781,6 +804,9 @@
   position: absolute;
   left: 16px;
   right: 16px;
+  /* Leaflet panes go up to z-index 700 and its controls to 800: without an
+     explicit z-index the overlays are painted underneath the map. */
+  z-index: 900;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -792,9 +818,39 @@
 }
 
 .map-overlay-bottom {
-  bottom: 16px;
+  bottom: var(--map-bottom-control-offset, 28px);
   pointer-events: auto;
   justify-content: flex-start;
+}
+
+/* 测量完成后就地清除：放在地图右侧中部，不必再去点工具按钮切换 */
+.map-overlay-middle-right {
+  left: auto;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+.measure-clear-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  /* 半透明，避免遮挡地图 */
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink-1);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(2px);
+}
+
+.measure-clear-button:active {
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .chip {
@@ -839,29 +895,34 @@
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(120deg, var(--accent), #f49d37);
+  /* 确定按钮用深色 */
+  background: var(--ink-1, #102a43);
 }
 
 .btn-secondary {
-  color: var(--ink-2);
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
+  color: var(--ink-1);
+  background: #ffffff;
+  /* 取消按钮要有可见边框 */
+  border: 1px solid rgba(16, 42, 67, 0.34);
 }
 
 .route-editor-mask {
   position: fixed;
   inset: 0;
-  background: transparent !important;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 8svh;
   z-index: 2000;
+  display: flex;
+  /* 上下居中，并让出状态栏/安全区 */
+  align-items: center;
+  justify-content: center;
+  padding: max(18px, var(--ion-safe-area-top, env(safe-area-inset-top, 0px))) 12px
+    max(18px, var(--ion-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+  /* 半透明深色遮罩：对话框不再是"透出地图"的浮层 */
+  background: rgba(16, 42, 67, 0.45);
 }
 
 .route-editor-panel {
   width: min(620px, calc(100% - 24px));
-  background: var(--surface);
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
@@ -944,18 +1005,19 @@
   inset: 0;
   z-index: 2000;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 10svh;
-  background: transparent !important;
+  padding: max(18px, var(--ion-safe-area-top, env(safe-area-inset-top, 0px))) 12px
+    max(18px, var(--ion-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+  background: rgba(16, 42, 67, 0.45);
 }
 
 .turn-editor-panel {
   width: min(420px, calc(100% - 24px));
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 12px;
+  background: #ffffff;
   box-shadow: var(--shadow);
 }
 
@@ -1001,10 +1063,12 @@
 }
 
 .turn-editor-field input {
-  min-height: 40px;
-  border: 1px solid var(--line);
+  min-height: 42px;
+  /* 经纬度输入框要有清晰边框（原 --line 太淡，看起来像没有边框） */
+  border: 1px solid rgba(16, 42, 67, 0.34);
   border-radius: 8px;
   padding: 0 10px;
+  background: #ffffff;
   color: var(--ink-1);
   font: inherit;
 }
@@ -1027,6 +1091,12 @@
 .turn-editor-delete {
   color: #fff;
   background: var(--danger);
+}
+
+/* 只有自己新增的转向点能删除，其它情况下按钮保留但禁用 */
+.turn-editor-delete:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -1053,7 +1123,4 @@
     justify-content: stretch;
   }
 
-  .route-editor-mask {
-    padding-top: 4svh;
-  }
 }

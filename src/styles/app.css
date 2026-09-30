@@ -39,9 +39,10 @@ ion-header ion-toolbar {
 }
 
 ion-tab-bar {
-  --height: 56px;
+  /* Icon (22px) + label (13px) + the safe area need a little more room. */
+  --height: 62px;
   --ion-safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
-  min-height: 56px;
+  min-height: 62px;
 }
 
 ion-button {
@@ -51,7 +52,6 @@ ion-button {
 /* iOS zooms the WebView when the focused native input is smaller than 16px. */
 ion-input,
 ion-textarea,
-ion-searchbar,
 ion-select,
 input,
 textarea,
@@ -61,7 +61,6 @@ select {
 
 ion-input::part(native),
 ion-textarea::part(native),
-ion-searchbar::part(input),
 ion-select::part(text) {
   font-size: 16px !important;
 }
@@ -225,3 +224,26 @@ ion-select.select-fill-outline:not(.md) {
   opacity: 0;
   transform: translate(-50%, -8px);
 }
+
+/* ---------- Toast ---------- */
+/* Toast 背景一直是深色（默认深灰 / success / danger），统一用白色文字。 */
+ion-toast {
+  --color: #ffffff;
+}
+
+/* 顶部 toast 默认贴着屏幕顶端，会被状态栏遮住；用 part(wrapper) 下移一个安全区高度。
+   底部 toast 的 wrapper 是 bottom: 0，margin-top 不影响它。 */
+ion-toast::part(wrapper) {
+  margin-top: var(--ion-safe-area-top, env(safe-area-inset-top, 0px));
+}
+
+/* ---------- ion-select 弹层（时区下拉） ---------- */
+.tz-select-popover ion-item {
+  --min-height: 36px;
+  font-size: 12px;
+}
+
+.tz-select-popover ion-label {
+  font-size: 12px;
+}
+

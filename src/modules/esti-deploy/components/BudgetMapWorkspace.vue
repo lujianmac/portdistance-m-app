@@ -352,5 +352,5 @@ defineExpose({ invalidateSize })
 </script>
 
 <style scoped>
-.budget-map-workspace { position: relative; width: 100%; height: 100%; }.map-error, .map-notice { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 900; margin: 0; padding: 8px 10px; border-radius: 6px; color: #fff; font-size: 13px; }.map-error { background: rgba(180, 35, 24, .94); }.map-notice { background: rgba(23, 52, 71, .9); }
+.budget-map-workspace { position: relative; width: 100%; height: 100%; }.map-error, .map-notice { position: absolute; top: calc(12px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px))); left: 12px; right: 12px; z-index: 900; margin: 0; padding: 8px 10px; border-radius: 6px; color: #fff; font-size: 13px; }.map-error { background: rgba(180, 35, 24, .94); }.map-notice { background: rgba(23, 52, 71, .9); }
 </style>

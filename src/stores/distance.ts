@@ -5,6 +5,7 @@ import { DEFAULT_SPEED } from '@/config/runtime'
 import { t } from '@/i18n'
 import { useMapStore } from '@/stores/map'
 import type { PortInfo } from '@/types'
+import { portDisplayName } from '@/utils/port'
 import { DEFAULT_EXCLUDED_ROUTE_POINT_IDS } from '@/utils/route'
 import type { LocalRouteGeometry } from '@/utils/route'
 import { appStorage } from '@/utils/storage'
@@ -56,7 +57,10 @@ function rowFor(port: PortInfo): DistanceRow {
 }
 
 function routeLabel(rows: DistanceRow[]) {
-  return rows.map((row) => row.port.portName || row.port.portId).filter(Boolean).join(' -> ')
+  return rows
+    .map((row) => portDisplayName(row.port))
+    .filter(Boolean)
+    .join(' -> ')
 }
 
 export const useDistanceStore = defineStore('distance', () => {
@@ -137,7 +141,12 @@ export const useDistanceStore = defineStore('distance', () => {
     clearResult()
     if (!port.isCoordinate && !port.isWayPoint) {
       const portId = String(port.portId)
-      recentPorts.value = [port, ...recentPorts.value.filter((item) => String(item.portId) !== portId)].slice(0, 10)
+      const alreadyRecent = recentPorts.value.some((item) => String(item.portId) === portId)
+      // Keep the existing order so a chip does not jump to the front when the
+      // user re-selects a port that is already in the recent list.
+      if (!alreadyRecent) {
+        recentPorts.value = [port, ...recentPorts.value].slice(0, 10)
+      }
       persistRecents()
     }
   }

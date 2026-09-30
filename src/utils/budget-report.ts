@@ -231,7 +231,13 @@ export async function exportVoyageBudgetPdf(options: {
   })
   const canShare = await Share.canShare()
   if (canShare.value) {
-    await Share.share({ title: options.name || t('report.shareTitle'), files: [saved.uri] })
+    try {
+      await Share.share({ title: options.name || t('report.shareTitle'), files: [saved.uri] })
+    } catch {
+      // Targets such as WeChat reject file items, and cancelling the sheet
+      // rejects too. The PDF is already written to Documents, so a failed share
+      // must not be reported as a failed export.
+    }
   }
   return { filename, uri: saved.uri }
 }

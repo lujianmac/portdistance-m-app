@@ -164,6 +164,7 @@ export default {
     initFailed: 'Leaflet initialisation failed',
     maritimeEnabledNotice: '{name} is on; for reference only, not for navigation or legal delimitation',
     timezoneEnabledNotice: '{name} is on; for time reference only',
+    clearMeasurement: 'Clear measurement',
     measureDistanceHint: 'Click to add distance points, double-click to finish',
     measureAreaHint: 'Click to add area vertices, double-click to finish',
     totalDistanceLabel: 'Total distance {value}',

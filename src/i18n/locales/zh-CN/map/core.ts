@@ -4,7 +4,7 @@ export default {
     distanceRequired: '请先获取航程',
     routeEditHint: '点击路由点进行设置',
     routeLoadFailed: '路由点加载失败',
-    turnEditHint: '拖动或点击转向点进行编辑',
+    turnEditHint: '1. 单击转向点，可以拖动转向点到指定位置\n2. 双击转向点，可以编辑或删除转向点\n3. 单击航线，可以添加转向点',
     recalcFailed: '航程重算失败',
     turnUpdateFailed: '转向点更新失败',
     noEditableRoutePoint: '未加载到可编辑路由点',
@@ -27,5 +27,6 @@ export default {
     longitude: '经度',
     latitude: '纬度',
     invalidCoordinate: '请输入有效的经纬度',
+    deleteLockedHint: '只能删除自己新增的转向点',
   },
 }

@@ -61,6 +61,7 @@ export default {
   no: 'No',
   unit: {
     nauticalMile: 'nautical miles',
+    nauticalMileUpper: 'NM',
     nauticalMileShort: 'nm',
     knot: 'knots',
     knotShort: 'kn',

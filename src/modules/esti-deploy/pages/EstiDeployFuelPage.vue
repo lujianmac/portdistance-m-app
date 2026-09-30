@@ -11,12 +11,12 @@
       <ion-card class="page-card">
         <ion-card-header><div class="section-heading"><h2 class="page-card-title">{{ t('budget.pages.fuel.templateTitle') }}</h2><ion-button fill="clear" size="small" @click="templatesOpen = true">{{ t('budget.pages.fuel.manage') }}</ion-button></div></ion-card-header>
         <ion-card-content>
-          <ion-select :value="store.document.fuelTemplateId || ''" :label="t('budget.pages.fuel.selectTemplateLabel')" fill="outline" label-placement="floating" interface="popover" :placeholder="t('budget.pages.fuel.templateNone')" :aria-label="t('budget.pages.fuel.selectTemplateLabel')" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="selectTemplate">
+          <ion-item lines="full" class="template-select-item"><ion-select :value="store.document.fuelTemplateId || ''" :label="t('budget.pages.fuel.selectTemplateLabel')" label-placement="floating" interface="popover" :placeholder="t('budget.pages.fuel.templateNone')" :aria-label="t('budget.pages.fuel.selectTemplateLabel')" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="selectTemplate">
             <ion-select-option value="">{{ t('budget.pages.fuel.templateNone') }}</ion-select-option>
             <ion-select-option v-for="template in store.fuelTemplates" :key="template.id" :value="String(template.id)">{{ template.name }}</ion-select-option>
-          </ion-select>
+          </ion-select></ion-item>
           <div class="template-save-row">
-            <ion-input v-model.trim="templateName" :label="t('budget.pages.fuel.templateNameLabel')" fill="outline" label-placement="floating" :placeholder="t('budget.pages.fuel.templateNamePlaceholder')" :aria-label="t('budget.pages.fuel.templateNameLabel')" />
+            <ion-item lines="full" class="template-name-item"><ion-input v-model.trim="templateName" :label="t('budget.pages.fuel.templateNameLabel')" label-placement="floating" :placeholder="t('budget.pages.fuel.templateNamePlaceholder')" :aria-label="t('budget.pages.fuel.templateNameLabel')" /></ion-item>
             <ion-button fill="outline" :disabled="!templateName" @click="saveTemplate">{{ t('common.save') }}</ion-button>
           </div>
           <ion-button v-if="selectedTemplate" fill="clear" size="small" @click="updateTemplate">{{ t('budget.pages.fuel.updateTemplate', { name: selectedTemplate.name }) }}</ion-button>
@@ -26,21 +26,21 @@
       <ion-card class="page-card">
         <ion-card-header><h2 class="page-card-title">{{ t('budget.pages.fuel.daily') }}</h2></ion-card-header>
         <ion-list lines="full">
-          <ion-item><ion-input :value="valueText(store.document.fuel.seaLadenFuel)" :label="t('budget.pages.fuel.seaLadenFuel')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaLadenFuel', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.fuel.seaBallastFuel)" :label="t('budget.pages.fuel.seaBallastFuel')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaBallastFuel', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.fuel.seaAuxFuel)" :label="t('budget.pages.fuel.seaAuxFuel')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaAuxFuel', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.fuel.portIdleFuel)" :label="t('budget.pages.fuel.portIdleFuel')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portIdleFuel', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.fuel.portWorkingFuel)" :label="t('budget.pages.fuel.portWorkingFuel')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portWorkingFuel', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.fuel.seaLadenFuel)" :label="t('budget.pages.fuel.seaLadenFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaLadenFuel', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.fuel.seaBallastFuel)" :label="t('budget.pages.fuel.seaBallastFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaBallastFuel', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.fuel.seaAuxFuel)" :label="t('budget.pages.fuel.seaAuxFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaAuxFuel', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.fuel.portIdleFuel)" :label="t('budget.pages.fuel.portIdleFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portIdleFuel', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.fuel.portWorkingFuel)" :label="t('budget.pages.fuel.portWorkingFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portWorkingFuel', $event)" /></ion-item>
         </ion-list>
       </ion-card>
 
       <ion-card class="page-card">
         <ion-card-header><h2 class="page-card-title">{{ t('budget.pages.fuel.speeds') }}</h2></ion-card-header>
         <ion-list lines="full">
-          <ion-item><ion-input :value="valueText(store.document.speeds.ballastFullSpeed)" :label="t('budget.pages.fuel.ballastFullSpeed')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastFullSpeed', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.speeds.ballastEcoSpeed)" :label="t('budget.pages.fuel.ballastEcoSpeed')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastEcoSpeed', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.speeds.ladenFullSpeed)" :label="t('budget.pages.fuel.ladenFullSpeed')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenFullSpeed', $event)" /></ion-item>
-          <ion-item><ion-input :value="valueText(store.document.speeds.ladenEcoSpeed)" :label="t('budget.pages.fuel.ladenEcoSpeed')" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenEcoSpeed', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.speeds.ballastFullSpeed)" :label="t('budget.pages.fuel.ballastFullSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastFullSpeed', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.speeds.ballastEcoSpeed)" :label="t('budget.pages.fuel.ballastEcoSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastEcoSpeed', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.speeds.ladenFullSpeed)" :label="t('budget.pages.fuel.ladenFullSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenFullSpeed', $event)" /></ion-item>
+          <ion-item><ion-input :value="valueText(store.document.speeds.ladenEcoSpeed)" :label="t('budget.pages.fuel.ladenEcoSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenEcoSpeed', $event)" /></ion-item>
         </ion-list>
       </ion-card>
     </ion-content>
@@ -87,5 +87,16 @@ async function confirmRemoveTemplate(id: number | string) { const alert = await 
 </script>
 
 <style scoped>
-.section-heading, .template-save-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.template-save-row { margin-top: 12px; }.template-save-row ion-input { min-width: 0; --padding-start: 10px; }.template-save-row ion-button { margin: 0; }.page-card ion-list { margin: 0; }.page-card ion-item { --padding-start: 16px; --padding-end: 16px; }.page-card ion-card-content > ion-select { width: 100%; max-width: 100%; color: #173447; }
+.section-heading, .template-save-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.template-save-row { margin-top: 12px; }.template-save-row ion-input { min-width: 0; --padding-start: 10px; }.template-save-row ion-button { margin: 0; }.page-card ion-list { margin: 0; }.page-card ion-item { --padding-start: 16px; --padding-end: 16px; }.page-card ion-card-content ion-select { width: 100%; max-width: 100%; color: #173447; }
+
+/* 下划线输入：清掉 md solid fill 的灰底与自带的底部边框，只保留 item 的下划线 */
+ion-input,
+ion-select,
+ion-textarea {
+  --background: transparent;
+  --border-width: 0;
+}
+
+.page-card .template-select-item { --min-height: 52px; --padding-start: 0; --padding-end: 0; --inner-padding-end: 0; }
+.page-card .template-name-item { flex: 1 1 auto; min-width: 0; --min-height: 44px; --padding-start: 0; --padding-end: 0; --inner-padding-end: 0; }
 </style>

@@ -11,6 +11,8 @@ export interface TurnPointGraphicLike {
   lon: number
   lat: number
   symbol: 'default' | 'selected'
+  /** Added by the user (`wt === '1'`), so it is the only kind that can be deleted. */
+  userAdded: boolean
 }
 
 export interface TurnPointDialogPoint {
@@ -28,7 +30,8 @@ export function createTurnPointGraphics(turningPoints: RoutePoint[]): TurnPointG
       routeSeq: item.routeSeq,
       lon: Number(item.lon),
       lat: Number(item.lat),
-      symbol: 'default'
+      symbol: 'default',
+      userAdded: Boolean(item.userAdded)
     }))
 }
 

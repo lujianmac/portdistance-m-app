@@ -8,7 +8,7 @@
       </ion-card>
       <ion-card class="page-card">
         <ion-card-header><h2 class="page-card-title">{{ t('budget.pages.prices.unitPrices') }}</h2></ion-card-header>
-        <ion-list lines="full"><ion-item><ion-input :value="valueText(store.document.prices.lsfoPrice)" label="LSFO" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('lsfoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item><ion-item><ion-input :value="valueText(store.document.prices.hsfoPrice)" label="HSFO" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('hsfoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item><ion-item><ion-input :value="valueText(store.document.prices.mgoPrice)" label="LSDO/MGO" fill="outline" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('mgoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item></ion-list>
+        <ion-list lines="full"><ion-item><ion-input :value="valueText(store.document.prices.lsfoPrice)" label="LSFO" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('lsfoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item><ion-item><ion-input :value="valueText(store.document.prices.hsfoPrice)" label="HSFO" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('hsfoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item><ion-item><ion-input :value="valueText(store.document.prices.mgoPrice)" label="LSDO/MGO" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('mgoPrice', $event)" /><span class="field-unit">{{ t('common.unit.usd') }}</span></ion-item></ion-list>
         <ion-card-content><ion-note>{{ t('budget.pages.prices.defaultNote') }}</ion-note></ion-card-content>
       </ion-card>
       <ion-card v-if="store.document.routeCalculated" class="page-card"><ion-card-header><h2 class="page-card-title">{{ t('budget.pages.prices.fuelCost') }}</h2></ion-card-header><ion-card-content><div class="metric-grid"><div><small>{{ t('budget.pages.prices.mainFuelCost', { type: mainFuelType }) }}</small><strong>{{ amount(store.document.results.nonEcaFuelCost) }}</strong></div><div><small>{{ t('budget.pages.prices.ecaMainEngineCost') }}</small><strong>{{ amount(store.document.results.ecaFuelCost) }}</strong></div><div><small>{{ t('budget.pages.prices.seaAuxCost') }}</small><strong>{{ amount(store.document.results.seaAuxFuelCost) }}</strong></div><div><small>{{ t('budget.pages.prices.portFuelCost') }}</small><strong>{{ amount(store.document.results.portFuelCost) }}</strong></div></div><div class="fuel-total"><span>{{ t('budget.pages.prices.total') }}</span><strong>{{ amount(store.document.results.totalFuelCost) }}</strong></div></ion-card-content></ion-card>
@@ -36,4 +36,12 @@ function amount(value: number) { return formatAmount(value) }
 
 <style scoped>
 .page-card ion-list { margin: 0; }.page-card ion-item { --padding-start: 16px; --padding-end: 16px; }.field-unit { flex: none; align-self: center; margin-inline-start: 6px; color: #6b7c8d; font-size: 12px; white-space: nowrap; }.fuel-total { display: flex; align-items: baseline; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e8ed; color: #173447; }.fuel-total strong { color: #006c8c; font-size: 18px; }
+
+/* 下划线输入：清掉 md solid fill 的灰底与自带的底部边框，只保留 item 的下划线 */
+ion-input,
+ion-select,
+ion-textarea {
+  --background: transparent;
+  --border-width: 0;
+}
 </style>

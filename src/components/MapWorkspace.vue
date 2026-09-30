@@ -59,11 +59,18 @@ import { useDistanceStore } from '@/stores/distance'
 import { useMapStore } from '@/stores/map'
 import type { RoutePointConfig, RouteState } from '@/types/map'
 
+/** Six decimals is the common maritime coordinate precision (~0.11 m). */
+const COORDINATE_DECIMALS = 6
+
+function roundCoordinate(value: number) {
+  return Number(value.toFixed(COORDINATE_DECIMALS))
+}
+
 const { t } = useI18n()
 const distance = useDistanceStore()
 const map = useMapStore()
 const error = ref('')
-const mapView = ref<{ invalidateSize: () => void } | null>(null)
+const mapView = ref<{ invalidateSize: () => void; preserveViewport: () => void } | null>(null)
 const notice = ref('')
 const routeEditEnabled = ref(false)
 const turnEditEnabled = ref(false)
@@ -99,11 +106,11 @@ function invalidateSize() {
   mapView.value?.invalidateSize()
 }
 
-function showNotice(message: string) {
+function showNotice(message: string, duration = 2400) {
   notice.value = message
   window.setTimeout(() => {
     if (notice.value === message) notice.value = ''
-  }, 2400)
+  }, duration)
 }
 
 function clearEditModes() {
@@ -153,7 +160,8 @@ function toggleTurnEdit() {
   }
   turnEditEnabled.value = !turnEditEnabled.value
   routeEditEnabled.value = false
-  showNotice(turnEditEnabled.value ? t('map.core.workspace.turnEditHint') : '')
+  // Three-line usage hint: keep it visible long enough to read.
+  showNotice(turnEditEnabled.value ? t('map.core.workspace.turnEditHint') : '', 7000)
 }
 
 function openRouteEditor(wayPointId: number) {
@@ -195,20 +203,22 @@ function openTurnPointCreate(payload: { anchorRouteSeq: number; lon: number; lat
     canDelete: false,
     anchorRouteSeq: payload.anchorRouteSeq,
     routeSeq: null,
-    longitude: payload.lon,
-    latitude: payload.lat,
+    longitude: roundCoordinate(payload.lon),
+    latitude: roundCoordinate(payload.lat),
   }
 }
 
-function openTurnPointEdit(payload: { routeSeq: number; lon: number; lat: number }) {
+function openTurnPointEdit(payload: { routeSeq: number; lon: number; lat: number; userAdded?: boolean }) {
   turnPointEditor.value = {
     visible: true,
     mode: 'edit',
-    canDelete: map.canDeleteTurnPoint(payload.routeSeq),
+    // The marker itself reports whether the point was added by the user, so the
+    // delete action no longer depends on re-resolving it from the geometry.
+    canDelete: Boolean(payload.userAdded) || map.canDeleteTurnPoint(payload.routeSeq),
     anchorRouteSeq: null,
     routeSeq: payload.routeSeq,
-    longitude: payload.lon,
-    latitude: payload.lat,
+    longitude: roundCoordinate(payload.lon),
+    latitude: roundCoordinate(payload.lat),
   }
 }
 
@@ -225,6 +235,8 @@ function closeTurnPointEditor() {
 }
 
 function applyEditedGeometry(geometry: ReturnType<typeof map.updateTurnPoint>) {
+  // Editing a turn point must not re-zoom the map, so keep the current viewport.
+  if (geometry) mapView.value?.preserveViewport()
   if (!geometry || !distance.applyRouteGeometry(geometry)) {
     showNotice(distance.error || t('map.core.workspace.turnUpdateFailed'))
   }
@@ -249,20 +261,32 @@ function commitTurnPointDrag(payload: { routeSeq: number; lon: number; lat: numb
 }
 
 async function confirmClearRoute() {
+  // Nothing has been calculated yet: clearing only removes the ports, so no confirmation.
+  if (!distance.hasDistanceResult) {
+    clearRouteNow()
+    return
+  }
   const alert = await alertController.create({
     header: t('map.core.workspace.clearTitle'),
     message: t('map.core.workspace.clearMessage'),
     buttons: [
       { text: t('common.cancel'), role: 'cancel' },
-      { text: t('common.clear'), role: 'destructive', handler: () => { distance.clearAll(); routePointConfig.value = []; clearEditModes() } },
+      { text: t('common.clear'), role: 'destructive', handler: () => { clearRouteNow() } },
     ],
   })
   await alert.present()
+}
+
+function clearRouteNow() {
+  distance.clearAll()
+  routePointConfig.value = []
+  clearEditModes()
+  notice.value = ''
 }
 
 defineExpose({ invalidateSize })
 </script>
 
 <style scoped>
-.map-workspace { position: relative; width: 100%; height: 100%; }.map-error, .map-notice { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 900; margin: 0; padding: 8px 10px; border-radius: 6px; color: #fff; font-size: 13px; }.map-error { background: rgba(180, 35, 24, .94); }.map-notice { background: rgba(23, 52, 71, .9); }
+.map-workspace { position: relative; width: 100%; height: 100%; }.map-error, .map-notice { position: absolute; top: calc(12px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px))); left: 12px; right: 12px; z-index: 900; margin: 0; padding: 8px 10px; border-radius: 6px; color: #fff; font-size: 13px; }.map-error { background: rgba(180, 35, 24, .94); }.map-notice { background: rgba(23, 52, 71, .94); white-space: pre-line; }
 </style>

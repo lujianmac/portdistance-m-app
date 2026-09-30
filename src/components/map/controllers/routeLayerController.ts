@@ -65,8 +65,12 @@ export class RouteLayerController {
   private selectedTurnPointRouteSeq: number | null = null
   private pendingTurnPointCreate: ReturnType<typeof setTimeout> | null = null
   private pendingTurnPointSelect: ReturnType<typeof setTimeout> | null = null
+  private lastTurnPointTap: { routeSeq: number; at: number } | null = null
   private routeFitInFlight: Promise<void> | null = null
   private routeReferenceLongitude: number | null = null
+  private hasCompletedInitialFit = false
+  /** Bounds of a fit that was requested while the map container had no size yet. */
+  private pendingFitBounds: L.LatLngBounds | null = null
 
   constructor(options: RouteLayerControllerOptions) {
     this.map = options.map
@@ -98,11 +102,16 @@ export class RouteLayerController {
     this.renderRouteGraphics()
   }
 
-  setRouteData(points: RoutePoint[], segments: RoutePathItem[], turningPoints: RoutePoint[]): void {
+  setRouteData(
+    points: RoutePoint[],
+    segments: RoutePathItem[],
+    turningPoints: RoutePoint[],
+    autoFit = true,
+  ): void {
     this.routePoints = deepClone(points)
     this.trackSegments = deepClone(segments)
     this.turningPoints = deepClone(turningPoints)
-    this.renderRouteGraphics()
+    this.renderRouteGraphics(autoFit)
   }
 
   clearRoute(): void {
@@ -131,9 +140,13 @@ export class RouteLayerController {
   setTurnDragMode(enabled: boolean): void {
     this.turnDragEnabled = enabled
     this.cancelPendingTurnPointSelect()
+    this.lastTurnPointTap = null
     this.selectedTurnPointRouteSeq = null
     this.turnPreviewLayer.clearLayers()
     this.map.doubleClickZoom[enabled ? 'disable' : 'enable']()
+    // Rebuild the route so the transparent hit line is only alive in edit mode
+    // (autoFit = false keeps the current viewport).
+    this.renderRouteGraphics(false)
     this.renderTurnPointGraphics()
   }
 
@@ -290,33 +303,97 @@ export class RouteLayerController {
       smoothFactor: 0,
       bubblingMouseEvents: false,
     })
-    line.on('mouseover', () => this.callbacks.onTrackHover?.(buildTrackHoverText(distanceNm)))
-    line.on('mouseout', () => this.callbacks.onTrackHover?.(null))
-    line.on('click', (event) => {
+    /*
+     * The visible route is a 2px stroke, which is nearly impossible to tap on a
+     * phone. A second, transparent polyline with the same coordinates widens the
+     * touch target. Because it is a normal map layer it pans, zooms and re-renders
+     * together with the visible line, and the tap is projected back onto the
+     * route so the new turn point always lands exactly on the line.
+     */
+    const hitLine = L.polyline(latLngs, {
+      pane: this.panes.route,
+      color: '#a1443b',
+      weight: 24,
+      opacity: 0,
+      lineCap: 'round',
+      lineJoin: 'round',
+      smoothFactor: 0,
+      bubblingMouseEvents: false,
+      // Only an active touch target while the turn point editor is on.
+      interactive: this.turnDragEnabled,
+      className: 'leaflet-route-hit-line',
+    })
+    const bindHover = (target: L.Polyline) => {
+      target.on('mouseover', () => this.callbacks.onTrackHover?.(buildTrackHoverText(distanceNm)))
+      target.on('mouseout', () => this.callbacks.onTrackHover?.(null))
+    }
+    bindHover(line)
+    bindHover(hitLine)
+
+    const requestTurnPointCreate = (event: L.LeafletMouseEvent, snapToRoute: boolean) => {
       if (!this.turnDragEnabled) return
       const anchorRouteSeq = Number(idArr[0])
       if (!Number.isFinite(anchorRouteSeq)) return
       this.cancelPendingTurnPointCreate()
       this.pendingTurnPointCreate = window.setTimeout(() => {
         this.pendingTurnPointCreate = null
+        const latLng = snapToRoute ? this.snapToPolyline(hitLine, event.latlng) : event.latlng
         const [longitude, latitude] = this.coordinates.toBusinessCoordinate(
-          canonicalLongitude(event.latlng.lng),
-          event.latlng.lat,
+          canonicalLongitude(latLng.lng),
+          latLng.lat,
         )
         this.callbacks.onTurnPointCreateRequest?.({ anchorRouteSeq, lon: longitude, lat: latitude })
       }, 220)
-    })
+    }
+
+    line.on('click', (event) => requestTurnPointCreate(event, true))
+    hitLine.on('click', (event) => requestTurnPointCreate(event, true))
+
     line.addTo(this.routeLayer)
+    hitLine.addTo(this.routeLayer)
+  }
+
+  /** Project a tap onto the polyline so the created turn point sits on the route. */
+  private snapToPolyline(line: L.Polyline, latLng: L.LatLng): L.LatLng {
+    const layerPoint = this.map.latLngToLayerPoint(latLng)
+    const closest = line.closestLayerPoint(layerPoint)
+    return closest ? this.map.layerPointToLatLng(closest) : latLng
+  }
+
+  /** Re-apply a fit that could not run because the container was not measured yet. */
+  applyPendingFit(): void {
+    if (!this.pendingFitBounds) return
+    const bounds = this.pendingFitBounds
+    this.pendingFitBounds = null
+    if (this.map.getSize().x === 0 || this.map.getSize().y === 0) {
+      this.pendingFitBounds = bounds
+      return
+    }
+    this.hasCompletedInitialFit = false
+    this.fitRoute(bounds)
   }
 
   private fitRoute(bounds: L.LatLngBounds): void {
     if (!bounds.isValid()) return
+    // A tab page can be created before the container has a layout size; Leaflet
+    // would then compute an absurd zoom. Remember the bounds and fit after the
+    // host has measured the container instead.
+    const size = this.map.getSize()
+    if (size.x === 0 || size.y === 0) {
+      this.pendingFitBounds = bounds
+      return
+    }
+    // The very first fit of a freshly created map is applied instantly: animating
+    // it from the placeholder view is what produced the "zoom in, then settle"
+    // flicker when the map tab is entered again.
+    const animate = this.hasCompletedInitialFit
+    this.hasCompletedInitialFit = true
     this.map.fitBounds(bounds, {
       paddingTopLeft: [72, 96],
       paddingBottomRight: [84, 96],
       maxZoom: 7,
-      animate: true,
-      duration: 0.5,
+      animate,
+      duration: animate ? 0.5 : 0,
     })
     this.routeFitInFlight = new Promise<void>((resolve) => {
       const finish = () => {
@@ -383,24 +460,36 @@ export class RouteLayerController {
         bubblingMouseEvents: false,
         keyboard: true,
         title: t('map.layers.shell.turnPointTitle'),
-        icon: this.createTurnPointIcon(selected),
-      })
+        icon: this.createTurnPointIcon(selected, point.userAdded),
+      }) as L.Marker & { turnPointRouteSeq?: number }
+      marker.turnPointRouteSeq = point.routeSeq
       marker.on('click', (event) => {
         L.DomEvent.stop(event)
+        this.cancelPendingTurnPointCreate()
+        /*
+         * Own double-tap detection: iOS/WebView does not reliably emit `dblclick`
+         * for a double tap, and the click below only marks the point as selected
+         * (it no longer re-renders the layer, which used to replace the DOM node
+         * between the two taps and swallow the native dblclick as well).
+         */
+        const now = Date.now()
+        const isDoubleTap = this.lastTurnPointTap !== null
+          && this.lastTurnPointTap.routeSeq === point.routeSeq
+          && now - this.lastTurnPointTap.at < 400
+        if (isDoubleTap) {
+          this.openTurnPointEditor(point.routeSeq, marker)
+          return
+        }
+        this.lastTurnPointTap = { routeSeq: point.routeSeq, at: now }
         this.cancelPendingTurnPointSelect()
         this.pendingTurnPointSelect = window.setTimeout(() => {
           this.pendingTurnPointSelect = null
-          this.selectTurnPoint(selected ? null : point.routeSeq)
-        }, 220)
+          this.selectTurnPoint(this.selectedTurnPointRouteSeq === point.routeSeq ? null : point.routeSeq, false)
+        }, 260)
       })
       marker.on('dblclick', (event) => {
         L.DomEvent.stop(event)
-        this.cancelPendingTurnPointCreate()
-        this.cancelPendingTurnPointSelect()
-        this.selectTurnPoint(point.routeSeq)
-        const latLng = marker.getLatLng()
-        const [longitude, latitude] = this.coordinates.toBusinessCoordinate(canonicalLongitude(latLng.lng), latLng.lat)
-        this.callbacks.onTurnPointEditRequest?.({ routeSeq: point.routeSeq, lon: longitude, lat: latitude })
+        this.openTurnPointEditor(point.routeSeq, marker)
       })
       marker.on('dragstart', () => {
         this.cancelPendingTurnPointSelect()
@@ -423,9 +512,10 @@ export class RouteLayerController {
     this.turnPointLayer.addTo(this.map)
   }
 
-  private createTurnPointIcon(selected: boolean): L.DivIcon {
+  private createTurnPointIcon(selected: boolean, userAdded = false): L.DivIcon {
+    const variant = `${selected ? ' selected' : ''}${userAdded ? ' turn-point-icon-user' : ''}`
     return L.divIcon({
-      className: `turn-point-icon${selected ? ' selected' : ''}`,
+      className: `turn-point-icon${variant}`,
       html: '<span></span>',
       iconSize: [24, 24],
       iconAnchor: [12, 12],
@@ -435,6 +525,34 @@ export class RouteLayerController {
   private selectTurnPoint(routeSeq: number | null, rerender = true): void {
     this.selectedTurnPointRouteSeq = routeSeq
     if (rerender) this.renderTurnPointGraphics()
+    else this.applyTurnPointSelection()
+  }
+
+  /** Update the selected style in place, without rebuilding the marker elements. */
+  private applyTurnPointSelection(): void {
+    this.turnPointLayer.eachLayer((layer) => {
+      const marker = layer as L.Marker & { turnPointRouteSeq?: number }
+      const element = marker.getElement()
+      if (!element) return
+      element.classList.toggle('selected', marker.turnPointRouteSeq === this.selectedTurnPointRouteSeq)
+    })
+  }
+
+  /** Opens the turn point dialog; shared by the double-tap, dblclick and drag paths. */
+  private openTurnPointEditor(routeSeq: number, marker: L.Marker): void {
+    this.cancelPendingTurnPointCreate()
+    this.cancelPendingTurnPointSelect()
+    this.lastTurnPointTap = null
+    this.selectTurnPoint(routeSeq, false)
+    const latLng = marker.getLatLng()
+    const [longitude, latitude] = this.coordinates.toBusinessCoordinate(canonicalLongitude(latLng.lng), latLng.lat)
+    const source = this.turningPoints.find((point) => point.routeSeq === routeSeq)
+    this.callbacks.onTurnPointEditRequest?.({
+      routeSeq,
+      lon: longitude,
+      lat: latitude,
+      userAdded: Boolean(source?.userAdded),
+    })
   }
 
   private renderTurnDragPreview(routeSeq: number, longitude: number, latitude: number): void {

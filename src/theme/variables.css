@@ -10,7 +10,20 @@
   --ion-color-secondary-shade: #ca5e3d;
   --ion-color-secondary-tint: #e97a58;
   --ion-color-success: #17815d;
+  /* Ionic needs the full set: without `-contrast` any `.ion-color-success`
+     element (e.g. a toast) resolves `color: var(--ion-color-contrast)` to an
+     invalid value and falls back to the dark inherited text colour. */
+  --ion-color-success-rgb: 23, 129, 93;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #15724f;
+  --ion-color-success-tint: #2e8e6d;
   --ion-color-danger: #b42318;
+  --ion-color-danger-rgb: 180, 35, 24;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #9f1f15;
+  --ion-color-danger-tint: #bc392f;
   --ion-background-color: #f5f7fa;
   --ion-text-color: #172b3a;
   --ion-font-family: 'Avenir Next', 'PingFang SC', 'Hiragino Sans GB', sans-serif;

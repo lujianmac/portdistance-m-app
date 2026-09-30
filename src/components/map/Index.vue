@@ -5,11 +5,31 @@
       <div v-if="hoverText" class="map-overlay map-overlay-top">
         <span class="chip chip-hover">{{ hoverText }}</span>
       </div>
+
+      <div v-if="measureMode && measurePointCount > 0" class="map-overlay map-overlay-middle-right">
+        <!--
+          The button lives inside the Leaflet container: without stopping the events
+          here every tap on it would also reach the map and be recorded as a new
+          measurement point (which is what broke re-measuring after a clear).
+        -->
+        <button
+          class="measure-clear-button"
+          type="button"
+          @click.stop="clearMeasurement"
+          @dblclick.stop
+          @pointerdown.stop
+          @mousedown.stop
+          @touchstart.stop
+        >
+          <Eraser :size="16" :stroke-width="1.9" aria-hidden="true" />
+          <span>{{ t('map.layers.shell.clearMeasurement') }}</span>
+        </button>
+      </div>
     </div>
 
     <aside class="map-tools map-tools-primary" :aria-label="t('map.layers.shell.primaryTools')">
       <button
-        class="map-tool map-icon-tool"
+        class="map-tool map-icon-tool basemap-trigger"
         :class="{ active: basemapMenuVisible }"
         type="button"
         :title="t('map.layers.basemap.section')"
@@ -137,7 +157,7 @@
 
     <aside class="map-tools map-tools-secondary" :aria-label="t('map.layers.shell.secondaryTools')">
       <button
-        class="map-tool map-icon-tool"
+        class="map-tool map-icon-tool more-trigger"
         :class="{ active: moreMenuVisible }"
         type="button"
         :title="t('map.layers.shell.layersMenu')"
@@ -264,8 +284,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { defaultMapSource } from '@/config/region'
 import {
   Clock3,
+  Eraser,
   CloudSun,
   Grid3X3,
   Layers3,
@@ -318,7 +340,7 @@ const emit = defineEmits<{
   (event: 'clear-route'): void
   (event: 'route-point-click', wayPointId: number): void
   (event: 'turn-point-create', payload: { anchorRouteSeq: number; lon: number; lat: number }): void
-  (event: 'turn-point-edit', payload: { routeSeq: number; lon: number; lat: number }): void
+  (event: 'turn-point-edit', payload: { routeSeq: number; lon: number; lat: number; userAdded?: boolean }): void
   (event: 'turn-point-drag-commit', payload: { routeSeq: number; lon: number; lat: number }): void
 }>()
 
@@ -362,6 +384,7 @@ const timezoneLayerEnabled = ref(false)
 const timezoneLayerLoading = ref(false)
 const graticuleEnabled = ref(false)
 const measureMode = ref<MeasureMode>(null)
+const measurePointCount = ref(0)
 const meteoQueryEnabled = ref(false)
 const meteoQueryLoading = ref(false)
 const meteoQueryResult = ref<MeteoPointQueryResult | null>(null)
@@ -374,7 +397,8 @@ const meteoParticlesVisible = ref(false)
 const meteoLayerIds = reactive(new Set<MeteoLayerId>())
 const basemapMenuVisible = ref(false)
 const moreMenuVisible = ref(false)
-const basemapOptions = computed(() => basemaps())
+const keepViewportOnNextSync = ref(false)
+const basemapOptions = computed(() => basemaps(defaultMapSource()))
 const activeBasemapId = ref(basemapOptions.value[0]?.id || 'domestic')
 
 let mapAdapter: LeafletMapAdapter | null = null
@@ -406,14 +430,28 @@ function showNotice(message: string) {
   }, 2400)
 }
 
+/**
+ * Set by the host before an in-place edit (turn point drag / coordinate change) so
+ * the next sync does not re-fit and re-zoom the map under the user's finger.
+ */
+function preserveViewport() {
+  keepViewportOnNextSync.value = true
+}
+
 function syncMapFromProps() {
   if (!mapAdapter || !mapReady.value) return
   mapAdapter.setPorts(props.ports)
   if (!props.trackSegments.length && !props.turningPoints.length) {
     mapAdapter.clearRoute()
   } else {
-    mapAdapter.setRouteData(props.routePoints, props.trackSegments, props.turningPoints)
+    mapAdapter.setRouteData(
+      props.routePoints,
+      props.trackSegments,
+      props.turningPoints,
+      !keepViewportOnNextSync.value,
+    )
   }
+  keepViewportOnNextSync.value = false
   emit('map-data-synced', { routeCount: props.trackSegments.length })
 }
 
@@ -424,6 +462,24 @@ function syncRoutePointConfig() {
 function syncInteractionModes() {
   mapAdapter?.setRouteEditMode(props.routeEditEnabled)
   mapAdapter?.setTurnDragMode(props.turnEditEnabled)
+}
+
+function closeLayerMenus() {
+  basemapMenuVisible.value = false
+  moreMenuVisible.value = false
+}
+
+/**
+ * Tapping anywhere outside an open layer menu closes it. The trigger buttons and
+ * the popups themselves are ignored so their own click handlers keep working
+ * (`pointerdown` capture still sees taps on the Leaflet canvas).
+ */
+function onDocumentPointerDown(event: Event) {
+  if (!basemapMenuVisible.value && !moreMenuVisible.value) return
+  const target = event.target as HTMLElement | null
+  if (!target || typeof target.closest !== 'function') return
+  if (target.closest('.basemap-trigger, .more-trigger, .basemap-popup, .map-more-popup')) return
+  closeLayerMenus()
 }
 
 function toggleBasemapMenu() {
@@ -443,6 +499,13 @@ function selectBasemap(id: string) {
 
 function clearMeasureMode() {
   measureMode.value = mapAdapter?.setMeasureMode(null) ?? null
+  measurePointCount.value = 0
+}
+
+/** Clears the drawn measurement but keeps the tool active (see the floating button). */
+function clearMeasurement() {
+  mapAdapter?.clearMeasurement()
+  measurePointCount.value = 0
 }
 
 function formatCoordinate(value: number, positive: string, negative: string): string {
@@ -687,6 +750,7 @@ watch(() => [props.routeEditEnabled, props.turnEditEnabled], () => syncInteracti
 watch(locale, () => mapAdapter?.updateLocale())
 
 onMounted(async () => {
+  document.addEventListener('pointerdown', onDocumentPointerDown, true)
   if (!mapElement.value) {
     emit('error', t('map.layers.shell.containerMissing'))
     return
@@ -706,6 +770,9 @@ onMounted(async () => {
       onTurnPointCreateRequest: (payload) => emit('turn-point-create', payload),
       onTurnPointEditRequest: (payload) => emit('turn-point-edit', payload),
       onTurnPointDragCommit: (payload) => emit('turn-point-drag-commit', payload),
+      onMeasurementChange: ({ pointCount }) => {
+        measurePointCount.value = pointCount
+      },
     })
     mapReady.value = true
     syncRoutePointConfig()
@@ -718,6 +785,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocumentPointerDown, true)
   if (mapHintTimer) window.clearTimeout(mapHintTimer)
   meteoQueryRequest?.abort()
   mapAdapter?.destroy()
@@ -726,6 +794,8 @@ onBeforeUnmount(() => {
 
 defineExpose({
   clearRoute,
+  clearMeasurement,
+  preserveViewport,
   clearInteractionModes,
   getDiagnostics,
   reset,

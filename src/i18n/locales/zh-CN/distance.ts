@@ -29,7 +29,6 @@ export default {
     moveDown: '下移港口',
     remove: '删除港口',
     originPort: '起始港',
-    segment: '{distance} 海里 · {days} 天',
   },
   // 最近航程
   recentCalculations: {
@@ -40,14 +39,16 @@ export default {
   summary: {
     ariaLabel: '航程汇总',
     totalDistance: '全部航程',
-    eca: 'ECAs',
-    ecaWithRate: 'ECAs ({rate}%)',
+    eca: 'ECA',
+    ecaRate: '(0.1%)',
     sailingTime: '航行时间',
+    sailingTimeWithSpeed: '{days} 天（{speed} 节）',
   },
   // 航程时间
   schedule: {
     ariaLabel: '航程时间',
     departureTime: '出发时间',
+    arrivalTime: '到达时间',
     editDeparture: '设置出发时间',
     timeZoneSettings: '时区设置',
     setTimeZone: '设置时区',
@@ -58,9 +59,13 @@ export default {
   // 复制 / 分享 / 转预算
   share: {
     copyResult: '复制结果',
+    copyImage: '复制图片',
+    imageCopied: '图片已复制',
     viewMap: '查看地图',
     budgetAction: '去做个航次预算',
     copied: '计算结果已复制',
+    cardSketchNote: '航线示意图，仅供参考',
+    cardTagline: '航程计算 · 航次预算',
     title: 'PortDistance 航程',
     routeLine: '航线: {route}',
     distanceLine: '距离: {distance} nm',

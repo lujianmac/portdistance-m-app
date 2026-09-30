@@ -8,7 +8,9 @@ export interface LeafletMapCallbacks {
   onMeteoGridData?: (grid: MeteoGridQueryResult) => void
   onRoutePointClick?: (wayPointId: number) => void
   onTurnPointCreateRequest?: (payload: { anchorRouteSeq: number; lon: number; lat: number }) => void
-  onTurnPointEditRequest?: (payload: { routeSeq: number; lon: number; lat: number }) => void
+  onTurnPointEditRequest?: (payload: { routeSeq: number; lon: number; lat: number; userAdded?: boolean }) => void
+  /** Fired whenever the measurement tool gains or loses points, so the host can show a clear button. */
+  onMeasurementChange?: (state: { mode: MeasureMode; pointCount: number }) => void
   onTurnPointDragCommit?: (payload: { routeSeq: number; lon: number; lat: number }) => void
   onTrackHover?: (text: string | null) => void
   onMapNotice?: (text: string) => void

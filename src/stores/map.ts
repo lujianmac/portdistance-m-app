@@ -69,15 +69,31 @@ export const useMapStore = defineStore('map', () => {
     return rebuildEditedRouteGeometry()
   }
 
+  /**
+   * A turn point the user added is always deletable. `findEditableRoutePoint`
+   * additionally requires an interior point of a segment with at least three
+   * points, which can reject a freshly inserted point; the fallback below looks
+   * the point up by `userAdded` alone so the delete action never silently fails.
+   */
+  function findUserAddedTurnPoint(routeSeq: number) {
+    for (const segment of routePointsOriginWithSeq.value) {
+      const index = segment.route?.findIndex((point: any) => {
+        return point.routeSeq === routeSeq && point.userAdded
+      }) ?? -1
+      if (index >= 0) return { segment, index, point: segment.route[index] }
+    }
+    return null
+  }
+
   function deleteTurnPoint(routeSeq: number) {
-    const target = findEditableRoutePoint(routeSeq)
+    const target = findEditableRoutePoint(routeSeq) ?? findUserAddedTurnPoint(routeSeq)
     if (!target || !target.point.userAdded) return null
     target.segment.route.splice(target.index, 1)
     return rebuildEditedRouteGeometry()
   }
 
   function canDeleteTurnPoint(routeSeq: number) {
-    return Boolean(findEditableRoutePoint(routeSeq)?.point.userAdded)
+    return Boolean((findEditableRoutePoint(routeSeq) ?? findUserAddedTurnPoint(routeSeq))?.point.userAdded)
   }
 
   function findEditableRoutePoint(routeSeq: number, allowSegmentStart = false) {

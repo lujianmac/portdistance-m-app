@@ -20,10 +20,33 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>weixin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wx53e713c836ad64d2</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>weixinULAPI</string>
+		<string>weixin</string>
+		<string>wechat</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要访问相册以保存图片</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册以选择头像</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -57,28 +80,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>weixin</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>wx53e713c836ad64d2</string>
-			</array>
-		</dict>
-	</array>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>weixinULAPI</string>
-		<string>weixin</string>
-		<string>wechat</string>
-	</array>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>需要访问相册以保存图片</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>需要访问相册以选择头像</string>
 </dict>
 </plist>

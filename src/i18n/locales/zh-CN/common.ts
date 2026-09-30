@@ -59,6 +59,7 @@ export default {
   no: '否',
   unit: {
     nauticalMile: '海里',
+    nauticalMileUpper: '海里',
     nauticalMileShort: 'nm',
     knot: '节',
     knotShort: 'kn',

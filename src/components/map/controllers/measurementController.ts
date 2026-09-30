@@ -15,6 +15,7 @@ interface MeasurementControllerOptions {
   pane: string
   isTurnDragEnabled: () => boolean
   onNotice?: (message: string) => void
+  onMeasurementChange?: (state: { mode: MeasureMode; pointCount: number }) => void
 }
 
 function formatDistance(distanceNm: number): string {
@@ -32,6 +33,7 @@ export class MeasurementController {
   private readonly pane: string
   private readonly isTurnDragEnabled: () => boolean
   private readonly onNotice?: (message: string) => void
+  private readonly onMeasurementChange?: (state: { mode: MeasureMode; pointCount: number }) => void
   private mode: MeasureMode = null
   private points: Array<[number, number]> = []
   private cursor: [number, number] | null = null
@@ -44,6 +46,7 @@ export class MeasurementController {
     this.pane = options.pane
     this.isTurnDragEnabled = options.isTurnDragEnabled
     this.onNotice = options.onNotice
+    this.onMeasurementChange = options.onMeasurementChange
   }
 
   setMode(mode: MeasureMode): MeasureMode {
@@ -61,6 +64,7 @@ export class MeasurementController {
     } else if (!this.isTurnDragEnabled()) {
       this.map.doubleClickZoom.enable()
     }
+    this.notifyChange()
     return this.mode
   }
 
@@ -70,6 +74,19 @@ export class MeasurementController {
 
   getPointCount(): number {
     return this.points.length
+  }
+
+  /** Clears the drawn measurement but keeps the tool active for a new measurement. */
+  clearMeasurement(): void {
+    this.points = []
+    this.cursor = null
+    this.finished = false
+    this.layer.clearLayers()
+    this.notifyChange()
+  }
+
+  private notifyChange(): void {
+    this.onMeasurementChange?.({ mode: this.mode, pointCount: this.points.length })
   }
 
   handleMapClick(event: L.LeafletMouseEvent): boolean {
@@ -96,6 +113,7 @@ export class MeasurementController {
     this.cursor = null
     this.finished = true
     this.render()
+    this.notifyChange()
     return true
   }
 
@@ -120,6 +138,7 @@ export class MeasurementController {
     this.cursor = null
     this.points.push(this.coordinates.toBusinessCoordinate(canonicalLongitude(event.latlng.lng), event.latlng.lat))
     this.render()
+    this.notifyChange()
   }
 
   private addLabel(position: L.LatLngExpression, text: string, total = false): void {
