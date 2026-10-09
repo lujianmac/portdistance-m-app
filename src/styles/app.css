@@ -238,12 +238,20 @@ ion-toast::part(wrapper) {
 }
 
 /* ---------- ion-select 弹层（时区下拉） ---------- */
+.tz-select-popover {
+  /* 跟随内容宽度，避免时区名被截断 */
+  --max-width: 92vw;
+}
+
 .tz-select-popover ion-item {
-  --min-height: 36px;
-  font-size: 12px;
+  --min-height: 40px;
+  font-size: 13px;
 }
 
 .tz-select-popover ion-label {
-  font-size: 12px;
+  overflow: visible;
+  font-size: 13px;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 

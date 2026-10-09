@@ -24,6 +24,9 @@
 </template>
 
 <script setup lang="ts">
+// NOT ROUTED: /esti-deploy/editor/... redirects to /esti-deploy/editor in src/router/index.ts,
+// so the live UI for this screen is the matching modal inside VoyageBudgetEditor.vue.
+// Editing this file has no user-visible effect until the route is re-pointed here.
 import { ref } from 'vue'
 import { CircleDollarSign, FileDown, Fuel, Map, MapPin, PackageOpen, ReceiptText, Save } from 'lucide-vue-next'
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar, onIonViewWillEnter, toastController } from '@ionic/vue'

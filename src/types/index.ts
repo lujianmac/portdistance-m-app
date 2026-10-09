@@ -1,4 +1,5 @@
 export * from './app'
 export * from './estimation'
+export * from './legacy-estimation'
 export * from './map'
 export * from './protocol'

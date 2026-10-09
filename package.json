@@ -10,6 +10,7 @@
     "typecheck": "vue-tsc -b",
     "i18n:check": "node scripts/check-i18n.mjs",
     "i18n:smoke": "node scripts/smoke-i18n.mjs",
+    "i18n:labels": "node scripts/check-budget-labels.mjs",
     "preview": "vite preview",
     "cap:sync": "npm run build && cap sync",
     "cap:android": "npm run cap:sync && cap open android",

@@ -62,7 +62,8 @@ export default {
     nauticalMileUpper: '海里',
     nauticalMileShort: 'nm',
     knot: '节',
-    knotShort: 'kn',
+    // 短单位按语言取值：中文就是「节」，英文用缩写 kn
+    knotShort: '节',
     day: '天',
     hour: '小时',
     minute: '分钟',

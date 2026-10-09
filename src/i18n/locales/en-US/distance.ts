@@ -2,7 +2,7 @@
 export default {
   // Page
   page: {
-    title: 'Distance calculation',
+    title: 'Distance',
   },
   // Port search
   search: {
@@ -33,16 +33,18 @@ export default {
   // Recent calculations
   recentCalculations: {
     title: 'Recent calculations',
-    summary: 'Total (ECA) {distance} ({eca}) NM · Sailing {days} days ({speed} knots)',
+    summary: 'Total (ECA) {distance} ({eca}) NM · Sea {days} days ({speed} kn)',
+    // Display-only: the sea-time LABEL is dropped so the row stops wrapping; the time itself stays.
+    summaryCompact: 'Total (ECA) {distance} ({eca}) NM · {days} days ({speed} kn)',
   },
   // Distance summary
   summary: {
     ariaLabel: 'Distance summary',
-    totalDistance: 'Total distance',
-    eca: 'ECA',
+    totalDistance: 'TTL Distance',
+    eca: 'ECAs',
     ecaRate: '(0.1%)',
-    sailingTime: 'Sailing time',
-    sailingTimeWithSpeed: '{days} days ({speed} knots)',
+    sailingTime: 'TTL Time',
+    sailingTimeUnit: ' days ({speed} kn)',
   },
   // Voyage time
   schedule: {
@@ -66,12 +68,13 @@ export default {
     copied: 'Calculation result copied',
     cardSketchNote: 'Route sketch, for reference only',
     cardTagline: 'Voyage distance · Voyage estimation',
-    title: 'PortDistance Route',
+    title: 'PortDistance',
     routeLine: 'Route: {route}',
     distanceLine: 'Distance: {distance} NM',
     distanceLineWithEca: 'Distance: {distance} NM (ECA: {eca})',
     recentDistanceLine: 'Distance: {distance} (ECA: {eca}) NM',
-    timeLine: 'Time: {days} days at {speed} kn',
+    // Copy / share text only (never rendered): "Sea" is the label, so the value must not repeat it.
+    timeLine: 'Sea: {days} days ({speed} kn)',
   },
   // Coordinate input
   coordinate: {

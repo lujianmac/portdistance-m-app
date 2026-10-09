@@ -11,6 +11,9 @@
 </template>
 
 <script setup lang="ts">
+// NOT ROUTED: /esti-deploy/editor/... redirects to /esti-deploy/editor in src/router/index.ts,
+// so the live UI for this screen is the matching modal inside VoyageBudgetEditor.vue.
+// Editing this file has no user-visible effect until the route is re-pointed here.
 import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonContent, IonHeader, IonInput, IonItem, IonList, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue'
 import AppBackButton from '@/components/AppBackButton.vue'
 import { useI18n } from 'vue-i18n'
@@ -28,7 +31,21 @@ function amount(value: number) { return formatAmount(value) }
 </script>
 
 <style scoped>
-.page-card ion-list { margin: 0; }.page-card ion-item { --padding-start: 16px; --padding-end: 16px; }.field-unit { flex: none; align-self: center; margin-inline-start: 6px; color: #6b7c8d; font-size: 12px; white-space: nowrap; }
+/* 参考小程序：页面左右 gutter 20~24rpx（这里取 12px），卡片内边距 22rpx（11px），
+   列表项不再叠加 16px 内边距 */
+.page-content {
+  --padding-top: 10px;
+  --padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.page-card { margin: 0 0 10px; border: 1px solid #dce6ef; border-radius: 6px; box-shadow: none; }
+.page-card ion-card-header { padding: 11px 11px 6px; }
+.page-card ion-card-content { padding: 6px 11px 11px; }
+.page-card ion-list { margin: 0; padding: 0; }
+.page-card ion-item { --min-height: 52px; --padding-start: 0; --padding-end: 0; --inner-padding-end: 0; }
+.field-unit { flex: none; align-self: center; margin-inline-start: 6px; color: #6b7c8d; font-size: 12px; white-space: nowrap; }
 
 /* 下划线输入：清掉 md solid fill 的灰底与自带的底部边框，只保留 item 的下划线 */
 ion-input,

@@ -1,5 +1,10 @@
 <template>
   <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ t('distance.page.title') }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
     <ion-content class="distance-tab-content">
       <main class="distance-page" :aria-label="t('distance.page.title')">
         <section class="top-search-area">
@@ -54,10 +59,7 @@
               :detail="false"
               @click="selectPort(port)"
             >
-              <ion-label class="suggest-label">
-                {{ portName(port) }}
-                <small v-if="portCountryName(port)">[{{ portCountryName(port) }}]</small>
-              </ion-label>
+              <ion-label class="suggest-label">{{ portName(port) }}<small v-if="portCountryName(port)">[{{ portCountryName(port) }}]</small></ion-label>
             </ion-item>
           </ion-list>
 
@@ -98,7 +100,7 @@
                 type="number"
                 @ion-input="setSpeed"
               />
-              <span class="speed-unit">{{ t('common.unit.knot') }}</span>
+              <span class="speed-unit">{{ t('common.unit.knotShort') }}</span>
             </ion-item>
             <div class="result-panel-ops">
               <ion-button
@@ -116,7 +118,7 @@
                 v-if="distance.hasDistanceResult"
                 class="clear-result-button"
                 color="medium"
-                @click="clearRoute"
+                @click="clearAllRoute"
               >
                 {{ t('distance.route.clearAll') }}
               </ion-button>
@@ -143,7 +145,7 @@
                 <strong>{{ item.routeLabel }}</strong>
                 <span>
                   {{
-                    t('distance.recentCalculations.summary', {
+                    t('distance.recentCalculations.summaryCompact', {
                       distance: item.totalDistanceNm.toFixed(2),
                       eca: item.totalEcaDistanceNm.toFixed(2),
                       days: item.sailingDays.toFixed(2),
@@ -162,10 +164,7 @@
             <ion-list class="port-list" lines="full">
               <ion-item v-for="(row, index) in distance.portPoints" :key="`${row.port.portId}-${index}`">
                 <ion-label class="port-label">
-                  <span class="port-name" :class="{ 'route-point-name': row.port.isWayPoint }">
-                    {{ portName(row.port) }}
-                    <small v-if="portCountryCode(row.port)">[{{ portCountryCode(row.port) }}]</small>
-                  </span>
+                  <span class="port-name" :class="{ 'route-point-name': row.port.isWayPoint }">{{ portName(row.port) }}<small v-if="portCountryCode(row.port)">[{{ portCountryCode(row.port) }}]</small></span>
                 </ion-label>
                 <ion-buttons v-if="!distance.hasDistanceResult" slot="end">
                   <ion-button
@@ -271,7 +270,7 @@
                     :cancel-text="t('common.cancel')"
                     @ion-change="setTimeZone('departure', $event)"
                   >
-                    <ion-select-option v-for="timeZone in timeZones" :key="`departure-${timeZone.value}`" :value="timeZone.value">
+                    <ion-select-option v-for="timeZone in timeZoneOptions" :key="`departure-${timeZone.value}`" :value="timeZone.value">
                       {{ timeZone.label }}
                     </ion-select-option>
                   </ion-select>
@@ -287,7 +286,7 @@
                     :cancel-text="t('common.cancel')"
                     @ion-change="setTimeZone('arrival', $event)"
                   >
-                    <ion-select-option v-for="timeZone in timeZones" :key="`arrival-${timeZone.value}`" :value="timeZone.value">
+                    <ion-select-option v-for="timeZone in timeZoneOptions" :key="`arrival-${timeZone.value}`" :value="timeZone.value">
                       {{ timeZone.label }}
                     </ion-select-option>
                   </ion-select>
@@ -323,7 +322,7 @@
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
-      <ion-content class="app-modal-content">
+      <ion-content class="app-modal-content departure-modal-content">
         <ion-datetime
           class="departure-datetime"
           presentation="date-time"
@@ -528,12 +527,14 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DistanceShareDialog from '@/components/distance/DistanceShareDialog.vue'
+import { appRegion, defaultTimeZone as regionDefaultTimeZone } from '@/config/region'
 import { useDistanceStore, type RecentDistanceCalculation } from '@/stores/distance'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
 import { useMapStore } from '@/stores/map'
 import type { PortInfo } from '@/types'
 import { portCountryCode, portCountryName, portDisplayName } from '@/utils/port'
 import { copyText } from '@/utils/share'
+import { appStorage } from '@/utils/storage'
 
 type CoordinateAxis = 'longitude' | 'latitude'
 type DmsPart = 'degree' | 'minute' | 'second'
@@ -552,10 +553,10 @@ interface DateTimeParts {
 }
 
 /**
- * Voyage times are entered as China time; the time zone pickers only reformat
- * the same instant, exactly like the mini program (`portdistance-mp`).
+ * Persisted departure time zone. Namespaced like `pd.app.locale` (see
+ * `stores/locale.ts`) so the user's choice survives a restart.
  */
-const defaultTimeZone = 'Asia/Shanghai'
+const TIME_ZONE_STORAGE_KEY = 'pd.app.distance.departureTimeZone'
 
 const timeZones = [
   { value: 'UTC', label: 'UTC (GMT+0)' },
@@ -569,6 +570,42 @@ const timeZones = [
   { value: 'Australia/Sydney', label: 'Australia (GMT+10)' },
   { value: 'Asia/Dubai', label: 'Dubai (GMT+4)' },
 ]
+
+/** `true` when `Intl` can format with `value`, i.e. it is a usable IANA time zone. */
+function isUsableTimeZone(value: unknown): value is string {
+  if (typeof value !== 'string' || !value) return false
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Time zone reported by the device. An unknown IANA id makes the `Intl`
+ * constructor throw, which is exactly the "cannot format with it" signal we
+ * need, so the validation and the fallback share one try/catch.
+ */
+function deviceTimeZone() {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (!zone) return ''
+    new Intl.DateTimeFormat('en-US', { timeZone: zone })
+    return zone
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Base zone of the voyage times: device zone -> primary zone of the app region
+ * -> `Asia/Shanghai`. Voyage times are typed and read in this zone; the pickers
+ * only reformat the same instant, exactly like the mini program (`portdistance-mp`).
+ */
+function resolveBaseTimeZone() {
+  return deviceTimeZone() || regionDefaultTimeZone(appRegion()) || 'Asia/Shanghai'
+}
 
 /** Fallback offsets keep the conversion working on WebViews without full time zone data. */
 const fallbackTimeZoneOffsets: Record<string, number> = {
@@ -584,8 +621,25 @@ const fallbackTimeZoneOffsets: Record<string, number> = {
   'Asia/Dubai': 4,
 }
 
-/** Smaller font for the time zone dropdown list (see `.tz-select-popover` in app.css). */
-const timeZoneInterfaceOptions = { cssClass: 'tz-select-popover' }
+/**
+ * `size: 'auto'` overrides the default `cover` Ionic uses for stacked labels, so
+ * the dropdown is as wide as its content and long time zone names are not
+ * truncated. The font comes from `.tz-select-popover` in app.css.
+ */
+const timeZoneInterfaceOptions = { cssClass: 'tz-select-popover', size: 'auto' }
+
+/** `GMT+8` style offset label, used for zones outside the curated list. */
+function zoneOffsetLabel(timeZone: string) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'shortOffset' })
+    const name = formatter.formatToParts(new Date()).find((part) => part.type === 'timeZoneName')?.value
+    if (name) return name.replace('UTC', 'GMT')
+  } catch {
+    // Fall through to the fixed offset table.
+  }
+  const offset = fallbackTimeZoneOffsets[timeZone]
+  return typeof offset === 'number' ? `GMT${offset >= 0 ? '+' : ''}${offset}` : 'GMT'
+}
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -600,14 +654,34 @@ const coordinateError = ref('')
 const departureEditorOpen = ref(false)
 const shareOpen = ref(false)
 const timeZonePanelOpen = ref(false)
-const departureDate = ref(dateValueInZone(new Date(), defaultTimeZone))
-const departureClock = ref(clockValueInZone(new Date(), defaultTimeZone))
-const departureTimeZone = ref(defaultTimeZone)
-const arrivalTimeZone = ref(defaultTimeZone)
+/** 基准时区：设备时区 → 地区主时区 → Asia/Shanghai */
+const baseTimeZone = ref(resolveBaseTimeZone())
+/** 上次选择的离港时区（appStorage 恢复），无效值直接忽略 */
+const storedTimeZone = appStorage.getSync(TIME_ZONE_STORAGE_KEY)
+const departureTimeZone = ref(isUsableTimeZone(storedTimeZone) ? storedTimeZone : baseTimeZone.value)
+/** 用户显式选过到港时区后，到港不再跟随离港 */
+const arrivalTimeZonePicked = ref(false)
+const arrivalTimeZone = ref(departureTimeZone.value)
+const departureDate = ref(dateValueInZone(new Date(), baseTimeZone.value))
+const departureClock = ref(clockValueInZone(new Date(), baseTimeZone.value))
 const coordinate = reactive({ latitude: '', longitude: '' })
 const dms = reactive({
   longitude: { degree: '', minute: '', second: '', direction: 'east' },
   latitude: { degree: '', minute: '', second: '', direction: 'north' },
+})
+
+/**
+ * 下拉项：固定列表 + 当前用到的列表外时区（设备时区等），
+ * 否则 ion-select 会因为找不到匹配项而显示空白。
+ */
+const timeZoneOptions = computed(() => {
+  const known = new Set(timeZones.map((timeZone) => timeZone.value))
+  const extraValues = [baseTimeZone.value, departureTimeZone.value, arrivalTimeZone.value]
+    .filter((value, index, list) => list.indexOf(value) === index && !known.has(value))
+  return [
+    ...extraValues.map((value) => ({ value, label: `${zoneShortName(value)} (${zoneOffsetLabel(value)})` })),
+    ...timeZones,
+  ]
 })
 
 const showSuggestions = computed(
@@ -616,13 +690,13 @@ const showSuggestions = computed(
 const showRecentPorts = computed(
   () => searchFocused.value && !keyword.value.trim() && !distance.hasDistanceResult,
 )
-const departureAt = computed(() => zonedDateTimeToUtc(departureDate.value, departureClock.value, defaultTimeZone))
+const departureAt = computed(() => zonedDateTimeToUtc(departureDate.value, departureClock.value, baseTimeZone.value))
 const arrivalAt = computed(() => new Date(departureAt.value.getTime() + distance.sailingDays * 86_400_000))
 const departurePickerValue = computed(() => `${departureDate.value}T${departureClock.value}:00`)
-const departureDisplay = computed(() => formatTimeInZone(departureAt.value, defaultTimeZone))
-const arrivalBaseDisplay = computed(() => formatTimeInZone(arrivalAt.value, defaultTimeZone))
-const showDepartureZone = computed(() => departureTimeZone.value !== defaultTimeZone)
-const showArrivalZone = computed(() => arrivalTimeZone.value !== defaultTimeZone)
+const departureDisplay = computed(() => formatTimeInZone(departureAt.value, baseTimeZone.value))
+const arrivalBaseDisplay = computed(() => formatTimeInZone(arrivalAt.value, baseTimeZone.value))
+const showDepartureZone = computed(() => departureTimeZone.value !== baseTimeZone.value)
+const showArrivalZone = computed(() => arrivalTimeZone.value !== baseTimeZone.value)
 const departureZoneDisplay = computed(
   () => `${formatTimeInZone(departureAt.value, departureTimeZone.value)} (${zoneShortName(departureTimeZone.value)})`,
 )
@@ -644,8 +718,8 @@ watch(
     keyword.value = ''
     searchFocused.value = false
     const now = new Date()
-    departureDate.value = dateValueInZone(now, defaultTimeZone)
-    departureClock.value = clockValueInZone(now, defaultTimeZone)
+    departureDate.value = dateValueInZone(now, baseTimeZone.value)
+    departureClock.value = clockValueInZone(now, baseTimeZone.value)
   },
 )
 
@@ -693,10 +767,24 @@ async function calculate() {
   await distance.calculate()
 }
 
-function clearRoute() {
-  distance.clearResult()
+function closeSchedulePanels() {
   timeZonePanelOpen.value = false
   departureEditorOpen.value = false
+}
+
+/** Clear distance: keep the port list, only drop the calculated result. */
+function clearRoute() {
+  distance.clearResult()
+  closeSchedulePanels()
+}
+
+/**
+ * Clear all: empty the port list as well. The map markers are derived from
+ * `distance.portPoints` (MapWorkspace -> PortDistanceMap), so the dots disappear too.
+ */
+function clearAllRoute() {
+  distance.clearAll()
+  closeSchedulePanels()
 }
 
 function segmentDays(value: number) {
@@ -860,10 +948,19 @@ function updateDepartureTime(event: ValueEvent) {
 
 function setTimeZone(target: TimeZoneTarget, event: ValueEvent) {
   const value = textValue(event)
-  if (!timeZones.some((timeZone) => timeZone.value === value)) return
+  if (!timeZoneOptions.value.some((timeZone) => timeZone.value === value)) return
 
-  if (target === 'departure') departureTimeZone.value = value
-  else arrivalTimeZone.value = value
+  if (target === 'departure') {
+    departureTimeZone.value = value
+    // 到港时区默认跟随离港时区，用户显式选过之后才独立
+    if (!arrivalTimeZonePicked.value) arrivalTimeZone.value = value
+    void appStorage.set(TIME_ZONE_STORAGE_KEY, value)
+    return
+  }
+
+  arrivalTimeZone.value = value
+  // 选回与离港一致时，恢复"跟随离港"的默认行为
+  arrivalTimeZonePicked.value = value !== departureTimeZone.value
 }
 
 function twoDigits(value: number) {
@@ -968,15 +1065,21 @@ async function presentToast(message: string) {
 }
 
 /*
- * 间距统一：工具栏 ↔ 搜索栏、搜索栏 ↔ 结果面板、结果面板 ↔ 底部 tab 栏
- * 都使用同一个 12px（底部 tab bar 自己已预留安全区，页面不再叠加）。
+ * 三处竖直间距共用同一个 --panel-gap，结构上保证一致（不再各写各的数值）：
+ * 工具栏 ↔ 搜索栏、搜索栏 ↔ 结果面板、结果面板 ↔ 底部 tab 栏。
+ * 底部 tab bar 自己已预留安全区，页面不再叠加；顶部安全区由 ion-header 承担。
+ * 左右仍是 12px 的页面 gutter。
+ * 注意：空态提示与「面板上沿」的间距是另一个量（.panel-empty 的 padding-top），
+ * 它不计入 --panel-gap，调节两者互不影响。
  */
 .distance-page {
+  --panel-gap: 16px;
+  /* 搜索面板与结果面板共用同一条边框，方便直接目视比对两条缝 */
+  --panel-border: #cfdded;
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  /* 本页没有 toolbar，必须自己让出状态栏高度（有 toolbar 的页面由 header 负责） */
-  padding: calc(12px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px))) 12px 12px;
+  padding: var(--panel-gap) 12px;
   background: #eef3f8;
 }
 
@@ -988,26 +1091,28 @@ async function presentToast(message: string) {
 
 .search-row {
   display: flex;
-  align-items: stretch;
+  /* 行高锁死 46px：任何一个子元素被内容撑高都会把「搜索框 ↔ 结果面板」的缝顶开 */
+  height: 46px;
+  align-items: center;
   gap: 4px;
 }
 
 /*
  * 搜索框用 ion-item + ion-input 而不是 ion-searchbar：iOS 下 ion-searchbar 的
  * 可视输入框高度被 shadow DOM 固定在 36px（--min-height，无 part / 变量可覆盖），
- * 无法与 56px 的坐标按钮等高。这里自己做，高度完全可控。
+ * 无法与 46px 的坐标按钮等高。这里自己做，高度完全可控。
  */
 .search-field {
   flex: 1;
   min-width: 0;
-  height: 56px;
-  --min-height: 56px;
+  height: 46px;
+  --min-height: 46px;
   --background: #ffffff;
   --border-radius: 8px;
   --padding-start: 12px;
   --inner-padding-end: 4px;
   --inner-border-width: 0;
-  border: 1px solid #d6e2ef;
+  border: 1px solid var(--panel-border, #cfdded);
   border-radius: 8px;
 }
 
@@ -1042,16 +1147,19 @@ async function presentToast(message: string) {
   color: #64748b;
 }
 
-/* 与搜索框等高，但更窄、图标更小，视觉上更轻 */
+/* 与搜索框等高（46px），但更窄、图标更小，视觉上更轻 */
 /* 无边框正方形按钮，高度与搜索框一致 */
 .coordinate-trigger {
-  flex: 0 0 56px;
-  width: 56px;
-  height: 56px;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
   margin: 0;
   --color: #1d4b7f;
   --padding-start: 0;
   --padding-end: 0;
+  /* 与搜索框同高：按钮原生 min-height 若大于 46px 会把整行撑高，缝就被顶开 */
+  --min-height: 46px;
+  max-height: 46px;
 }
 
 /* 浮层面板：绝对定位，不再把结果面板往下挤 */
@@ -1075,7 +1183,7 @@ async function presentToast(message: string) {
 }
 
 .search-popover ion-item {
-  --min-height: 44px;
+  --min-height: 46px;
   --padding-start: 14px;
   --padding-end: 14px;
 }
@@ -1093,7 +1201,7 @@ async function presentToast(message: string) {
 .suggest-label small {
   margin-left: 4px;
   color: #6e8192;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
 }
 
@@ -1165,9 +1273,10 @@ async function presentToast(message: string) {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  margin-top: 12px;
+  /* 与工具栏 ↔ 搜索栏、结果面板 ↔ 底部 tab 栏共用 --panel-gap */
+  margin-top: var(--panel-gap);
   overflow: hidden;
-  border: 1px solid #dce6ef;
+  border: 1px solid var(--panel-border, #cfdded);
   border-radius: 8px;
   background: #ffffff;
 }
@@ -1184,7 +1293,7 @@ async function presentToast(message: string) {
 /* 航速：ion-item + ion-input 的紧凑风格，不使用 outline */
 .speed-item {
   flex: none;
-  width: 96px;
+  width: 92px;
   --min-height: 34px;
   --padding-start: 0;
   --inner-padding-end: 0;
@@ -1218,10 +1327,13 @@ async function presentToast(message: string) {
   font-size: 14px;
 }
 
-.calculate-button {
+/* 选择器带上父级：否则会被上面 .result-panel-ops ion-button 的 min-height/font-size 覆盖 */
+.result-panel-ops ion-button.calculate-button {
+  min-height: 38px;
   --border-radius: 6px;
-  --padding-start: 26px;
-  --padding-end: 26px;
+  --padding-start: 30px;
+  --padding-end: 30px;
+  font-size: 16px;
 }
 
 .clear-result-button {
@@ -1236,10 +1348,13 @@ async function presentToast(message: string) {
   display: grid;
   flex: 1;
   min-height: 240px;
-  place-items: center;
-  align-content: center;
+  /* 空态内容靠上：面板被 flex 拉伸时不再把提示推到面板正中（否则会上百像素空白）。
+     这里的 padding-top 是「提示 ↔ 面板上沿」的距离，独立于 --panel-gap：
+     面板边框到搜索框仍是 --panel-gap(16px)，提示再往里 40px。 */
+  justify-items: center;
+  align-content: start;
   gap: 12px;
-  padding: 24px;
+  padding: 40px 24px 24px;
   color: #94a3b8;
   text-align: center;
 }
@@ -1276,7 +1391,7 @@ async function presentToast(message: string) {
 }
 
 .port-name small {
-  margin-left: 4px;
+  margin-left: 3px;
   color: #6e8192;
   font-size: 11px;
   font-weight: 400;
@@ -1390,9 +1505,16 @@ async function presentToast(message: string) {
 
 .schedule-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  /*
+   * 离港列吃掉剩余宽度（日期 "2026/07/29 14:05" 在 15px 字号下实测约 119px，
+   * 加上按钮后强行走等宽分列会被省略号截断），到港列按内容宽度，箭头保持窄；
+   * 两个操作按钮（离港"设置时间"、到港"时区设置"）共用 --schedule-action-size，
+   * 因此左右宽度完全一致，包括各自所在的网格列。
+   */
+  grid-template-columns: minmax(0, 1fr) auto auto var(--schedule-action-size);
   align-items: center;
-  gap: 3px;
+  gap: 5px;
+  --schedule-action-size: 28px;
 }
 
 .time-block {
@@ -1408,7 +1530,7 @@ async function presentToast(message: string) {
 .time-value {
   overflow: hidden;
   color: #111827;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
@@ -1418,8 +1540,8 @@ async function presentToast(message: string) {
 .time-action {
   display: grid;
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: var(--schedule-action-size, 28px);
+  height: var(--schedule-action-size, 28px);
   padding: 0;
   place-items: center;
   border: 1px solid #d6e2ef;
@@ -1428,10 +1550,9 @@ async function presentToast(message: string) {
   color: #315c7b;
 }
 
-/* 最右侧时区按钮占位更小、与到达时间贴得更近，给日期让出宽度 */
+/* 时区按钮固定贴到该列右端，与离港侧的设置时间按钮保持同样的宽度 */
 .time-action.settings {
   justify-self: end;
-  margin-left: -4px;
 }
 
 .time-action.settings.active {
@@ -1475,7 +1596,7 @@ async function presentToast(message: string) {
 /* 让完整时区名显示得下（app.css 为防 iOS 聚焦缩放把控件字号锁在 16px） */
 .timezone-item ion-select {
   min-width: 0;
-  font-size: 13px !important;
+  font-size: 14px !important;
 }
 
 /* 出发时间用居中的对话框，而不是整页 modal */
@@ -1490,6 +1611,12 @@ async function presentToast(message: string) {
   --backdrop-opacity: 0.42;
 }
 
+.departure-modal-content {
+  /* 日期上下留白稍微大一点 */
+  --padding-top: 22px;
+  --padding-bottom: 26px;
+}
+
 .departure-datetime {
   display: block;
   margin: 0 auto;
@@ -1497,7 +1624,7 @@ async function presentToast(message: string) {
 
 /* ---------- 分享 ---------- */
 .share-panel {
-  margin: 12px 10px 16px;
+  margin: 16px 10px 20px;
 }
 
 .share-toolbar {
@@ -1575,7 +1702,10 @@ async function presentToast(message: string) {
 .recent-calculation-item ion-button {
   margin: 0;
   --color: #0058a2;
-  font-size: 12px;
+  /* 右侧留白收紧：文字与面板内边距对齐 */
+  --padding-start: 8px;
+  --padding-end: 0;
+  font-size: 13px;
 }
 
 /* ---------- 弹窗：出发时间 / 坐标输入 ---------- */

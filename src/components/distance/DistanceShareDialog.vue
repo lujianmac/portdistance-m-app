@@ -35,7 +35,13 @@
           <div v-if="hasPorts" class="share-metrics">
             <div v-for="metric in metricViews" :key="metric.key" class="share-metric">
               <span class="share-metric-label">{{ metric.label }}</span>
-              <strong class="share-metric-value">{{ metric.value }}<small>{{ metric.unit }}</small></strong>
+              <strong class="share-metric-value">
+                <span
+                  v-for="(part, index) in metric.parts"
+                  :key="index"
+                  :class="{ 'share-metric-small': part.small }"
+                >{{ part.text }}</span>
+              </strong>
             </div>
           </div>
 
@@ -96,11 +102,16 @@ interface RoutePathEntry {
   idArr?: Array<number | string>
 }
 
+interface ShareMetricPart {
+  text: string
+  /** Units are rendered one size smaller, matching the summary card. */
+  small?: boolean
+}
+
 interface ShareMetricView {
   key: string
   label: string
-  value: string
-  unit: string
+  parts: ShareMetricPart[]
 }
 
 const BRAND_COLOR = '#006c8c'
@@ -142,6 +153,13 @@ const portCoordinates = computed<number[][]>(() =>
     .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1])),
 )
 
+/** Same order as `portCoordinates`, used for the map labels. */
+const portNames = computed<string[]>(() =>
+  distance.portPoints
+    .filter((row) => Number.isFinite(Number(row.port.longitude)) && Number.isFinite(Number(row.port.latitude)))
+    .map((row) => portNameOf(row.port)),
+)
+
 /**
  * Route polylines in business coordinates. When the route geometry is missing
  * (e.g. the dialog is opened straight after restoring a stored result) the legs
@@ -165,23 +183,26 @@ const metricViews = computed<ShareMetricView[]>(() => [
   {
     key: 'total-distance',
     label: t('distance.summary.totalDistance'),
-    value: distance.totalDistanceNm.toFixed(2),
-    unit: t('common.unit.nauticalMileUpper'),
+    parts: [
+      { text: distance.totalDistanceNm.toFixed(2) },
+      { text: t('common.unit.nauticalMileUpper'), small: true },
+    ],
   },
   {
     key: 'eca-distance',
     label: t('distance.summary.eca'),
-    value: distance.totalEcaDistanceNm.toFixed(2),
-    unit: t('common.unit.nauticalMileUpper'),
+    parts: [
+      { text: distance.totalEcaDistanceNm.toFixed(2) },
+      { text: t('common.unit.nauticalMileUpper'), small: true },
+    ],
   },
   {
     key: 'sailing-time',
     label: t('distance.summary.sailingTime'),
-    value: t('distance.summary.sailingTimeWithSpeed', {
-      days: distance.sailingDays.toFixed(2),
-      speed: distance.speed,
-    }),
-    unit: '',
+    parts: [
+      { text: distance.sailingDays.toFixed(2) },
+      { text: t('distance.summary.sailingTimeUnit', { speed: distance.speed }), small: true },
+    ],
   },
 ])
 
@@ -278,11 +299,18 @@ function drawMiniMapLayers() {
     if (!miniMap) return
     const isEndpoint = index === 0 || index === ports.length - 1
     const marker = L.circleMarker(toLatLng(port), {
-      radius: isEndpoint ? 4.5 : 3,
+      radius: isEndpoint ? 3.5 : 2.5,
       color: BRAND_COLOR,
       weight: 1.5,
       fillColor: '#ffffff',
       fillOpacity: 1,
+    })
+    // Port name label next to the dot (small, with a white halo, see the CSS).
+    marker.bindTooltip(portNames.value[index] || '', {
+      permanent: true,
+      direction: 'right',
+      offset: [4, 0],
+      className: 'share-map-port-label',
     })
     marker.addTo(miniMap)
     miniMapLayers.push(marker)
@@ -395,7 +423,17 @@ async function shareCapturedImage(dataUrl: string, fileName: string, title: stri
     } catch (error) {
       // Closing the share sheet is not a failure: do not open it a second time.
       if (isShareCancelled(error)) return true
-      throw error
+      // Some targets (WeChat in particular) reject a payload that mixes a text
+      // item with a file: retry with the image only before giving up.
+      console.warn('[share] image + text rejected, retrying with the image only', error)
+      try {
+        await Share.share({ title, files: [saved.uri], dialogTitle: title })
+        return true
+      } catch (retryError) {
+        if (isShareCancelled(retryError)) return true
+        console.error('[share] image share failed', retryError)
+        throw retryError
+      }
     }
   }
 
@@ -431,7 +469,7 @@ async function shareCardFallback(title: string, text: string) {
     ecaSegments: ecaSegments.value,
     metrics: metricViews.value.map((metric) => ({
       label: metric.label,
-      value: `${metric.value} ${metric.unit}`,
+      value: metric.parts.map((part) => part.text).join(''),
     })),
     sketchNote: t('distance.share.cardSketchNote'),
     footer: t('distance.share.cardTagline'),
@@ -525,6 +563,7 @@ function handleDismiss() {
   --background: #ffffff;
   --border-color: #dce6ef;
   --min-height: 52px;
+  --padding-bottom: 10px;
 }
 
 .share-dialog-header ion-title {
@@ -566,6 +605,26 @@ function handleDismiss() {
   background: #f5f9fb;
 }
 
+/* 港口名标签由 Leaflet 运行时创建，必须用 :deep() 才作用得到 */
+:deep(.share-map-port-label) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #173447;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow:
+    -1px -1px 0 #ffffff,
+    1px -1px 0 #ffffff,
+    -1px 1px 0 #ffffff,
+    1px 1px 0 #ffffff;
+}
+
+:deep(.share-map-port-label::before) {
+  display: none;
+}
+
 
 
 .share-result {
@@ -585,8 +644,8 @@ function handleDismiss() {
 .share-route {
   margin: 6px 0 0;
   color: #173447;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.5;
   word-break: break-word;
 }
@@ -605,26 +664,32 @@ function handleDismiss() {
 
 
 .share-metrics {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 12px;
-  padding: 10px 4px;
+  padding: 10px 2px;
   border-radius: 10px;
   background: #f5f9fb;
 }
 
 .share-metric {
-  width: 25%;
   min-width: 0;
-  padding: 0 4px;
+  padding: 0 2px;
   text-align: center;
+}
+
+/* 单位与海里单位同号（12px），值保持 14px */
+.share-metric-small {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .share-metric-label,
 .share-metric-value {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* 三段等宽，宁可折行也不要省略号 */
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .share-metric-label {
@@ -650,7 +715,7 @@ function handleDismiss() {
 .share-actions {
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 8px 8px;
 }
 
 .share-actions ion-button {

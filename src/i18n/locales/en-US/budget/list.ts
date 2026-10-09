@@ -24,10 +24,10 @@ export default {
   legacyCta: 'View Legacy Estimation History',
   // Budget card
   unnamedBudget: 'Unnamed voyage estimation',
-  totalIncome: 'Total income',
-  voyageCost: 'Voyage cost',
+  totalIncome: 'TTL Income',
+  voyageCost: 'TTL Cost',
   netProfit: 'Net profit',
-  hireLevel: 'Hire level per day',
+  hireLevel: 'As Hire/Day',
   // Delete confirmation and toasts
   deleteBudgetTitle: 'Delete voyage estimation',
   deleteDraftTitle: 'Delete draft',

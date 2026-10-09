@@ -60,6 +60,20 @@ const MAP_VIEWS: Record<AppRegion, DefaultMapView> = {
   GLOBAL: { center: [10, 25], zoom: 2 },
 }
 
+/**
+ * Primary time zone of each region, used as the fallback when the device time
+ * zone cannot be resolved (see the voyage page). Deliberately a fixed zone per
+ * region: the region is only a coarse signal, so a wrong guess must stay close
+ * to the user's actual offset.
+ */
+const REGION_TIME_ZONES: Record<AppRegion, string> = {
+  CN: 'Asia/Shanghai',
+  EU: 'Europe/London',
+  APAC: 'Asia/Singapore',
+  AMERICAS: 'America/New_York',
+  GLOBAL: 'UTC',
+}
+
 let cachedRegion: AppRegion | null = null
 
 function deviceTimeZone(): string {
@@ -116,6 +130,16 @@ export function appRegion(): AppRegion {
 
 export function defaultMapView(region: AppRegion = appRegion()): DefaultMapView {
   return MAP_VIEWS[region] ?? MAP_VIEWS.GLOBAL
+}
+
+/**
+ * Primary time zone of `region` (`GLOBAL` -> `UTC`). Only a fallback: callers
+ * that can read the device time zone should prefer it, because a user in
+ * `Asia/Kolkata` is not served well by `Asia/Singapore`. Unknown input falls
+ * back to `Asia/Shanghai`, the zone the project used before device detection.
+ */
+export function defaultTimeZone(region: AppRegion = appRegion()): string {
+  return REGION_TIME_ZONES[region] ?? REGION_TIME_ZONES.CN
 }
 
 /**
