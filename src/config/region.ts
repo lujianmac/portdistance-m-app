@@ -47,18 +47,25 @@ const APAC_REGIONS = new Set([
   'LK', 'AU', 'NZ', 'AE', 'SA', 'QA', 'OM', 'KW', 'BH',
 ])
 
-const MAP_VIEWS: Record<AppRegion, DefaultMapView> = {
-  // 中国：覆盖大陆全境
-  CN: { center: [104, 35], zoom: 4 },
-  // 欧洲：覆盖西欧到北欧
-  EU: { center: [12, 50], zoom: 4 },
-  // 亚太：覆盖东南亚到东北亚
-  APAC: { center: [110, 15], zoom: 3 },
-  // 美洲：覆盖北美东西海岸
-  AMERICAS: { center: [-85, 35], zoom: 3 },
-  // 兜底：以大西洋—欧洲—非洲为中心的全球视图，主要航线基本都在画面内
-  GLOBAL: { center: [10, 25], zoom: 2 },
-}
+/**
+ * Only two default views are left (product rule): China/Asia-Pacific users look
+ * at the China Sea, everybody else at the Atlantic.
+ *
+ * - China Sea: the basin spans roughly 99..141 E / 3..41 N (Beibu Gulf to the
+ *   Sea of Japan). `[122, 30]` is its centre of mass for shipping, and zoom 4
+ *   frames the East China Sea / Yellow Sea / South China Sea plus Japan and the
+ *   Philippines without wasting the screen on the Pacific.
+ * - Atlantic: the basin spans roughly -80 (Gulf of Mexico / Panama) .. 20 E
+ *   (west coast of Europe/Africa). `[-30, 20]` keeps the mid-Atlantic — where
+ *   the Europe-Americas and the Europe-Asia (Cape) lanes cross — in the middle
+ *   and stays north of the equator so the North Atlantic trunk routes are fully
+ *   in frame. Zoom 3 (~2048 px world) shows the basin with both continental
+ *   margins on a phone in landscape and does not crop one of them the way zoom
+ *   4 would; zoom 2 (the old GLOBAL fallback) would spend half the screen on the
+ *   Pacific.
+ */
+const CHINA_SEA_VIEW: DefaultMapView = { center: [122, 30], zoom: 4 }
+const ATLANTIC_VIEW: DefaultMapView = { center: [-30, 20], zoom: 3 }
 
 /**
  * Primary time zone of each region, used as the fallback when the device time
@@ -129,7 +136,8 @@ export function appRegion(): AppRegion {
 }
 
 export function defaultMapView(region: AppRegion = appRegion()): DefaultMapView {
-  return MAP_VIEWS[region] ?? MAP_VIEWS.GLOBAL
+  // 中国与亚太（新加坡、日本等）统一看中国海，其它地区（欧洲 / 美洲 / 兜底）看大西洋。
+  return region === 'CN' || region === 'APAC' ? CHINA_SEA_VIEW : ATLANTIC_VIEW
 }
 
 /**

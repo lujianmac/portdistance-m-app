@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: '로그인',
+    subtitle: '로그인하면 항해 계획과 항차 예산 산출을 계속 진행할 수 있습니다.',
+    email: '이메일',
+    emailPlaceholder: '이메일 주소를 입력하세요',
+    password: '비밀번호',
+    passwordPlaceholder: '비밀번호를 입력하세요',
+    togglePassword: '비밀번호 표시 전환',
+    submit: '로그인',
+    forgotPassword: '비밀번호 찾기',
+    register: '회원가입',
+    failed: '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요',
+  },
+  // Register page
+  register: {
+    title: '회원가입',
+    email: '이메일',
+    emailPlaceholder: '이메일 주소를 입력하세요',
+    nickname: '닉네임(선택)',
+    nicknamePlaceholder: '닉네임을 입력하세요',
+    code: '이메일 인증번호',
+    codePlaceholder: '인증번호를 입력하세요',
+    sendCode: '인증번호 받기',
+    password: '비밀번호',
+    passwordPlaceholder: '6~16자',
+    submit: '가입하고 로그인',
+    termsPrefix: '회원가입 시',
+    termsLink: '이용약관',
+    termsConjunction: '및',
+    privacyLink: '개인정보 처리방침',
+    termsSuffix: '에 동의하게 됩니다.',
+    haveAccount: '이미 계정이 있으신가요? 로그인',
+    sendCodeFailed: '인증번호 전송에 실패했습니다',
+    failed: '회원가입에 실패했습니다',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: '비밀번호 재설정',
+    email: '로그인 이메일',
+    emailPlaceholder: '이메일 주소를 입력하세요',
+    code: '이메일 인증번호',
+    codePlaceholder: '인증번호를 입력하세요',
+    sendCode: '인증번호 받기',
+    password: '새 비밀번호',
+    passwordPlaceholder: '6~16자',
+    submit: '비밀번호 재설정',
+    sendCodeFailed: '인증번호 전송에 실패했습니다',
+    failed: '비밀번호 재설정에 실패했습니다',
+  },
+}

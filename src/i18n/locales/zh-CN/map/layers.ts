@@ -171,5 +171,16 @@ export default {
     areaLabel: '面积 {nm} nm² / {km} km²',
     turnPointTitle: '转向点',
     trackHoverDistance: '距离：{value} 海里',
+    // 标点工具
+    pinTool: '标点',
+    pinPlacingHint: '点击地图连续放置标点，再次点击标点按钮退出',
+    pinInfoTitle: '标点信息',
+    pinCoordinate: '经纬度',
+    pinAddToPorts: '加到港口列表',
+    pinAddToPortsDisabled: '已有航程结果，暂不能加到港口列表',
+    pinAlreadyAdded: '该标点已加到港口列表',
+    pinAddedNotice: '已加到港口列表',
+    clearPins: '清除全部标点',
+    pinClearKeptPorts: '已清除全部标点；已有航程结果，标点加入的港口保留',
   },
 }

@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'Iniciar sesión',
+    subtitle: 'Inicia sesión para seguir planificando travesías y estimaciones de viaje.',
+    email: 'Correo electrónico',
+    emailPlaceholder: 'Introduce tu correo electrónico',
+    password: 'Contraseña',
+    passwordPlaceholder: 'Introduce tu contraseña',
+    togglePassword: 'Mostrar u ocultar la contraseña',
+    submit: 'Iniciar sesión',
+    forgotPassword: '¿Olvidaste tu contraseña?',
+    register: 'Crear una cuenta',
+    failed: 'No se pudo iniciar sesión. Inténtalo de nuevo más tarde',
+  },
+  // Register page
+  register: {
+    title: 'Crear cuenta',
+    email: 'Correo electrónico',
+    emailPlaceholder: 'Introduce tu correo electrónico',
+    nickname: 'Nombre de usuario (opcional)',
+    nicknamePlaceholder: 'Introduce tu nombre de usuario',
+    code: 'Código de verificación por correo',
+    codePlaceholder: 'Introduce el código de verificación',
+    sendCode: 'Enviar código',
+    password: 'Contraseña',
+    passwordPlaceholder: 'De 6 a 16 caracteres',
+    submit: 'Registrarse e iniciar sesión',
+    termsPrefix: 'Al registrarte, aceptas nuestros',
+    termsLink: 'Términos del servicio',
+    termsConjunction: 'y la',
+    privacyLink: 'Política de privacidad',
+    termsSuffix: '.',
+    haveAccount: '¿Ya tienes una cuenta? Inicia sesión',
+    sendCodeFailed: 'No se pudo enviar el correo',
+    failed: 'No se pudo completar el registro',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'Restablecer contraseña',
+    email: 'Correo de la cuenta',
+    emailPlaceholder: 'Introduce tu correo electrónico',
+    code: 'Código de verificación por correo',
+    codePlaceholder: 'Introduce el código de verificación',
+    sendCode: 'Enviar código',
+    password: 'Nueva contraseña',
+    passwordPlaceholder: 'De 6 a 16 caracteres',
+    submit: 'Restablecer contraseña',
+    sendCodeFailed: 'No se pudo enviar el correo',
+    failed: 'No se pudo restablecer la contraseña',
+  },
+}

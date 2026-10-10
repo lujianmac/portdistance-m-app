@@ -59,6 +59,25 @@ export interface ShipSpecification {
   breadth: number
   depth: number
   draft: number
+  createTime?: string | number
+  // 其他规范
+  imoCode?: string
+  callSign?: string
+  pandi?: string
+  shipClass?: string
+  grainCapacity?: number
+  baleCapacity?: number
+  holdNum?: number
+  hatchNum?: number
+  deckNum?: number
+  ssDate?: number | string
+  ddDate?: number | string
+  mainEngine?: string
+  shipYard?: string
+  hatchType?: string
+  hatchSize?: string
+  holdSize?: string
+  gearDesc?: string
 }
 
 export interface ShipSpecificationPageResult {

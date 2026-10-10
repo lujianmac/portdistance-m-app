@@ -19,6 +19,9 @@
                 type="text"
                 inputmode="search"
                 enterkeyhint="search"
+                :autocorrect="false"
+                autocapitalize="off"
+                :spellcheck="false"
                 @ion-focus="onSearchFocus"
                 @ion-blur="onSearchBlur"
                 @ion-input="onSearchInput"
@@ -68,10 +71,10 @@
               <span>{{ t('distance.recentPorts.title') }}</span>
               <div class="recent-port-ops">
                 <ion-button fill="clear" :aria-label="t('distance.recentPorts.clear')" @click="distance.clearRecentPorts()">
-                  <Trash2 :size="16" />
+                  <Trash2 :size="17" />
                 </ion-button>
                 <ion-button fill="clear" :aria-label="t('distance.recentPorts.close')" @click="closeRecentPorts">
-                  <X :size="17" />
+                  <X :size="18" />
                 </ion-button>
               </div>
             </div>
@@ -325,6 +328,7 @@
       <ion-content class="app-modal-content departure-modal-content">
         <ion-datetime
           class="departure-datetime"
+          mode="md"
           presentation="date-time"
           :locale="locale"
           :value="departurePickerValue"
@@ -489,7 +493,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import {
   IonButton,
   IonButtons,
@@ -708,6 +712,9 @@ onIonViewWillEnter(() => {
   void distance.restoreRecents()
 })
 
+// 离开页面时丢掉挂起的搜索请求，避免在别的页面触发一次无意义查询
+onBeforeUnmount(cancelSearchDebounce)
+
 watch(
   () => distance.hasDistanceResult,
   (hasResult) => {
@@ -742,18 +749,43 @@ function closeRecentPorts() {
   searchFocused.value = false
 }
 
+/**
+ * 港口搜索防抖：中文输入法/拼音输入时每个字母都会触发一次输入事件，
+ * 没有防抖就会按每次按键发一次请求（store 里虽有 requestVersion 丢弃过期响应，
+ * 但请求量仍然浪费）。280ms 足够合并连续输入，又不影响单次输入的响应速度。
+ */
+let searchDebounce: number | null = null
+
+function cancelSearchDebounce() {
+  if (searchDebounce !== null) {
+    window.clearTimeout(searchDebounce)
+    searchDebounce = null
+  }
+}
+
+function runSearch(value: string) {
+  cancelSearchDebounce()
+  void distance.searchPorts(value)
+}
+
 function onSearchInput(event: ValueEvent) {
   keyword.value = textValue(event)
-  void distance.searchPorts(keyword.value)
+  cancelSearchDebounce()
+  searchDebounce = window.setTimeout(() => {
+    searchDebounce = null
+    void distance.searchPorts(keyword.value)
+  }, 280)
 }
 
 function clearKeyword() {
   keyword.value = ''
-  void distance.searchPorts('')
+  runSearch('')
 }
 
 function selectPort(port: PortInfo) {
   if (distance.hasDistanceResult) return
+  // 选中后取消挂起的搜索，避免面板刚关又被一次迟到的查询重新打开
+  cancelSearchDebounce()
   distance.addPort(port)
   keyword.value = ''
   searchFocused.value = false
@@ -1073,7 +1105,7 @@ async function presentToast(message: string) {
  * 它不计入 --panel-gap，调节两者互不影响。
  */
 .distance-page {
-  --panel-gap: 16px;
+  --panel-gap: 14px;
   /* 搜索面板与结果面板共用同一条边框，方便直接目视比对两条缝 */
   --panel-border: #cfdded;
   display: flex;
@@ -1147,8 +1179,7 @@ async function presentToast(message: string) {
   color: #64748b;
 }
 
-/* 与搜索框等高（46px），但更窄、图标更小，视觉上更轻 */
-/* 无边框正方形按钮，高度与搜索框一致 */
+/* 正方形按钮：与搜索框等高（46px）；保持 fill="clear" 的纯图标外观，不画边框/圆角 */
 .coordinate-trigger {
   flex: 0 0 46px;
   width: 46px;
@@ -1157,7 +1188,7 @@ async function presentToast(message: string) {
   --color: #1d4b7f;
   --padding-start: 0;
   --padding-end: 0;
-  /* 与搜索框同高：按钮原生 min-height 若大于 46px 会把整行撑高，缝就被顶开 */
+  /* 与搜索框同高：按钮原生 min-height 若大于 46px 会把整行撑高 */
   --min-height: 46px;
   max-height: 46px;
 }
@@ -1183,7 +1214,7 @@ async function presentToast(message: string) {
 }
 
 .search-popover ion-item {
-  --min-height: 46px;
+  --min-height: 48px;
   --padding-start: 14px;
   --padding-end: 14px;
 }
@@ -1191,7 +1222,7 @@ async function presentToast(message: string) {
 .suggest-label {
   overflow: hidden;
   color: #243748;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1201,12 +1232,12 @@ async function presentToast(message: string) {
 .suggest-label small {
   margin-left: 4px;
   color: #6e8192;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
 }
 
 .recent-port-panel {
-  padding: 5px 10px 8px;
+  padding: 1px 10px 8px;
 }
 
 .recent-port-head {
@@ -1350,7 +1381,7 @@ async function presentToast(message: string) {
   min-height: 240px;
   /* 空态内容靠上：面板被 flex 拉伸时不再把提示推到面板正中（否则会上百像素空白）。
      这里的 padding-top 是「提示 ↔ 面板上沿」的距离，独立于 --panel-gap：
-     面板边框到搜索框仍是 --panel-gap(16px)，提示再往里 40px。 */
+     面板边框到搜索框仍是 --panel-gap(14px)，提示再往里 40px。 */
   justify-items: center;
   align-content: start;
   gap: 12px;
@@ -1376,15 +1407,21 @@ async function presentToast(message: string) {
 .port-list ion-item {
   --min-height: 52px;
   --padding-start: 12px;
-  --padding-end: 12px;
+  /* 右侧比左侧少 4px：行尾的升/降/删除按钮组整体再往面板边缘靠 4px */
+  --padding-end: 8px;
   --inner-padding-end: 0;
+}
+
+/* 行尾按钮组：ion-buttons 默认没有间距，补 2px */
+.port-list ion-buttons {
+  gap: 2px;
 }
 
 .port-name {
   display: block;
   overflow: hidden;
   color: #243748;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1392,7 +1429,8 @@ async function presentToast(message: string) {
 
 .port-name small {
   margin-left: 3px;
-  color: #6e8192;
+  /* 比港口名浅一档，但仍能读清（原 #6e8192 偏淡） */
+  color: #54697a;
   font-size: 11px;
   font-weight: 400;
 }
@@ -1622,6 +1660,22 @@ async function presentToast(message: string) {
   margin: 0 auto;
 }
 
+/*
+ * 日期行间距：ion-datetime 的日历渲染在 shadow root 里（组件源码 __attachShadow()，
+ * 样式是 :host .calendar-day 这种写法），页面 CSS 只能命中它对外暴露的 ::part()，
+ * 直接的 `.calendar-day` / `.calendar-days-of-week` 选择器进不去。
+ * - md：.calendar-month-grid 是 grid-template-rows: repeat(6, 1fr) 且网格高度由内容撑开，
+ *   行高 = 日期按钮的内容高度，所以给按钮补上下 margin 就能把行距从 42px 提到 46px
+ *   （日期圆点仍保持 42px，横向尺寸不动；实测日期网格 260px → 284px）。
+ * - ios：行高锚在 shadow 内未暴露成 part 的 .calendar-day-wrapper（height: 0 + min-height: 1rem），
+ *   日期按钮尺寸不参与行高计算，::part 改不动；而且 40px 的圆点在约 29px 的行里本就重叠，
+ *   把按钮改大只会更挤，所以这里保持原样。
+ * 取值 2px 是当前弹窗高度下的上限：md 内容 413px ≤ 可用 416px（--height 520 - toolbar 56 - 上下留白 48）。
+ */
+.departure-datetime::part(calendar-day) {
+  margin-block: 2px;
+}
+
 /* ---------- 分享 ---------- */
 .share-panel {
   margin: 16px 10px 20px;
@@ -1716,6 +1770,12 @@ async function presentToast(message: string) {
   --padding-end: 10px;
 }
 
+/* 经纬度弹窗左右再各留 8px（10px → 18px），只影响坐标弹窗，不动出发时间弹窗 */
+.coordinate-modal-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+}
+
 .coordinate-section-title {
   margin: 4px 0 8px;
   color: #334155;
@@ -1739,6 +1799,15 @@ async function presentToast(message: string) {
  * label-placement="floating"，不写 fill。md 模式下 ion-input 默认的 solid fill
  * 会画一层灰底和自带的底部边框，这里清掉，只留 item 的下划线。
  */
+.coordinate-fields {
+  /* 白色输入区（表单块）用应用默认圆角 8px：与搜索框、结果面板同一档 */
+  border-radius: 8px;
+  background: #ffffff;
+  /* 字段本身 --padding-start 为 0，靠这里的左右内边距避免文字贴到圆角边 */
+  padding: 2px 12px 6px;
+  overflow: hidden;
+}
+
 .coordinate-fields ion-input,
 .coordinate-fields ion-select {
   --background: transparent;

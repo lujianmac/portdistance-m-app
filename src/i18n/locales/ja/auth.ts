@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'ログイン',
+    subtitle: 'ログインすると、航程の計画や航海採算の見積もりを続けられます。',
+    email: 'メールアドレス',
+    emailPlaceholder: 'メールアドレスを入力',
+    password: 'パスワード',
+    passwordPlaceholder: 'パスワードを入力',
+    togglePassword: 'パスワードの表示を切り替え',
+    submit: 'ログイン',
+    forgotPassword: 'パスワードをお忘れの方',
+    register: '新規アカウント登録',
+    failed: 'ログインに失敗しました。しばらくしてからもう一度お試しください',
+  },
+  // Register page
+  register: {
+    title: '新規登録',
+    email: 'メールアドレス',
+    emailPlaceholder: 'メールアドレスを入力',
+    nickname: 'ニックネーム（任意）',
+    nicknamePlaceholder: 'ニックネームを入力',
+    code: 'メール認証コード',
+    codePlaceholder: '認証コードを入力',
+    sendCode: 'コードを送信',
+    password: 'パスワード',
+    passwordPlaceholder: '6〜16文字',
+    submit: '登録してログイン',
+    termsPrefix: '登録することで、',
+    termsLink: '利用規約',
+    termsConjunction: 'および',
+    privacyLink: 'プライバシーポリシー',
+    termsSuffix: 'に同意したものとみなされます。',
+    haveAccount: 'アカウントをお持ちの方はログイン',
+    sendCodeFailed: 'メールの送信に失敗しました',
+    failed: '登録に失敗しました',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'パスワードの再設定',
+    email: 'ログイン用メールアドレス',
+    emailPlaceholder: 'メールアドレスを入力',
+    code: 'メール認証コード',
+    codePlaceholder: '認証コードを入力',
+    sendCode: 'コードを送信',
+    password: '新しいパスワード',
+    passwordPlaceholder: '6〜16文字',
+    submit: 'パスワードを再設定',
+    sendCodeFailed: 'メールの送信に失敗しました',
+    failed: 'パスワードの再設定に失敗しました',
+  },
+}

@@ -95,3 +95,39 @@ function onDelete() {
   emit('delete')
 }
 </script>
+
+<style scoped>
+/*
+ * The modal is rendered as a sibling of the map (`PortDistanceMap`), i.e. outside
+ * the `.map-shell` element that defines the map theme's `--danger`, so the rule
+ * in `styles/leaflet-map.css` (`.turn-editor-delete { color: #fff; background:
+ * var(--danger) }`) resolved to `background: transparent` with white text and the
+ * button showed up as a blank white block. Draw the danger outline here instead
+ * of depending on a variable from a scope this component is not part of.
+ *
+ * A real 1px border is correct here: the button is a native `<button class="btn">`,
+ * not an `ion-button`, so Ionic's md/ios `fill` handling (see the
+ * `input-fill-outline:not(.md)` workaround in `styles/app.css`) does not apply.
+ * `.btn-secondary` in the same footer already carries a 1px border, so the box
+ * model stays consistent with the neighbouring buttons.
+ */
+.turn-editor-delete {
+  border: 1px solid #b42318;
+  background: #ffffff;
+  color: #b42318;
+}
+
+.turn-editor-delete:hover:not(:disabled) {
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.turn-editor-delete:focus-visible {
+  outline: 2px solid #b42318;
+  outline-offset: 2px;
+}
+
+.turn-editor-delete:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+</style>

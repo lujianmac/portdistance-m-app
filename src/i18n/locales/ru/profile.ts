@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'Профиль',
+    defaultName: 'Пользователь PortDistance',
+    emailFallback: 'Эл. почта не загружена',
+    account: 'Изменить никнейм',
+    email: 'Изменить эл. почту',
+    password: 'Изменить пароль',
+    ships: 'Характеристики судна',
+    language: 'Язык',
+    purchases: 'История покупок',
+    contact: 'Связаться с нами',
+    share: 'Поделиться приложением',
+    version: 'Версия',
+    logout: 'Выйти',
+    logoutMessage: 'Выйти из текущего аккаунта?',
+    logoutConfirm: 'Выйти',
+    shareText: 'PortDistance — калькулятор расстояний и бюджета рейса',
+  },
+  // Account information
+  account: {
+    title: 'Изменить никнейм',
+    nameLabel: 'Никнейм',
+    namePlaceholder: 'Введите никнейм',
+    emailLabel: 'Эл. почта аккаунта',
+    save: 'Сохранить никнейм',
+    saved: 'Никнейм обновлён',
+  },
+  // Change email
+  email: {
+    title: 'Изменить эл. почту',
+    newEmailLabel: 'Новая эл. почта',
+    newEmailPlaceholder: 'Введите новый адрес эл. почты',
+    codeLabel: 'Код из письма',
+    codePlaceholder: 'Введите код из письма',
+    sendCode: 'Отправить код',
+    codeSent: 'Код отправлен',
+    sendCodeFailed: 'Не удалось отправить письмо',
+    save: 'Сохранить эл. почту',
+    saved: 'Эл. почта обновлена',
+    saveFailed: 'Не удалось обновить эл. почту',
+  },
+  // Change password
+  password: {
+    title: 'Изменить пароль',
+    oldLabel: 'Текущий пароль',
+    oldPlaceholder: 'Введите текущий пароль',
+    newLabel: 'Новый пароль',
+    newPlaceholder: '6–16 символов',
+    save: 'Сохранить новый пароль',
+    updated: 'Пароль обновлён',
+  },
+  // Contact us
+  contact: {
+    title: 'Связаться с нами',
+    service: 'Служба поддержки',
+    support: 'Техническая поддержка',
+    supportDescription: 'По вопросам данных о рейсах, работы с картой и техническим вопросам обращайтесь в техническую поддержку.',
+    wechat: 'WeChat',
+    email: 'Эл. почта',
+  },
+  // Purchase records
+  purchases: {
+    title: 'История покупок',
+    refresh: 'Обновить историю покупок',
+    loadFailed: 'Не удалось загрузить историю покупок',
+    currentSubscription: 'Текущая подписка',
+    validity: 'Срок действия',
+    dateRange: 'с {start} по {end}',
+    defaultPlan: 'Подписка на сервис PortDistance',
+    noActiveSubscription: 'Нет активной подписки',
+    paymentRecords: 'История платежей',
+    empty: 'Покупок пока нет',
+    orderNo: 'Заказ {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: 'Оплата',
+    notRecorded: 'Нет данных',
+  },
+}

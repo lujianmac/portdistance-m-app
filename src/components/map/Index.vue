@@ -6,13 +6,17 @@
         <span class="chip chip-hover">{{ hoverText }}</span>
       </div>
 
-      <div v-if="measureMode && measurePointCount > 0" class="map-overlay map-overlay-middle-right">
+      <div
+        v-if="(measureMode && measurePointCount > 0) || pinCount > 0"
+        class="map-overlay map-overlay-middle-right"
+      >
         <!--
-          The button lives inside the Leaflet container: without stopping the events
-          here every tap on it would also reach the map and be recorded as a new
-          measurement point (which is what broke re-measuring after a clear).
+          The buttons live inside the Leaflet container: without stopping the events
+          here every tap on them would also reach the map and be recorded as a new
+          measurement point / pin (which is what broke re-measuring after a clear).
         -->
         <button
+          v-if="measureMode && measurePointCount > 0"
           class="measure-clear-button"
           type="button"
           @click.stop="clearMeasurement"
@@ -24,6 +28,64 @@
           <Eraser :size="16" :stroke-width="1.9" aria-hidden="true" />
           <span>{{ t('map.layers.shell.clearMeasurement') }}</span>
         </button>
+        <button
+          v-if="pinCount > 0"
+          class="measure-clear-button"
+          type="button"
+          :title="t('map.layers.shell.clearPins')"
+          :aria-label="t('map.layers.shell.clearPins')"
+          @click.stop="clearPins"
+          @dblclick.stop
+          @pointerdown.stop
+          @mousedown.stop
+          @touchstart.stop
+        >
+          <Eraser :size="16" :stroke-width="1.9" aria-hidden="true" />
+          <span>{{ t('map.layers.shell.clearPins') }}</span>
+        </button>
+      </div>
+
+      <div
+        v-if="activePin && pinInfoVisible"
+        class="map-overlay map-pin-info"
+        role="dialog"
+        :aria-label="t('map.layers.shell.pinInfoTitle')"
+      >
+        <!--
+          The panel lives inside the Leaflet container, so every pointer event is stopped
+          on its buttons: otherwise the tap would also reach the map and count as a map click.
+        -->
+        <p class="map-pin-coordinate">
+          <span>{{ t('map.layers.shell.pinCoordinate') }}</span>
+          <strong>{{ pinCoordinateText }}</strong>
+        </p>
+        <div class="map-pin-actions">
+          <button
+            class="map-pin-action map-pin-action-add"
+            type="button"
+            :disabled="!canAddPinToPorts"
+            :title="pinAddDisabledReason || undefined"
+            :aria-label="canAddPinToPorts ? t('map.layers.shell.pinAddToPorts') : pinAddDisabledReason"
+            @click.stop="addPinToPorts"
+            @dblclick.stop
+            @pointerdown.stop
+            @mousedown.stop
+            @touchstart.stop
+          >
+            {{ t('map.layers.shell.pinAddToPorts') }}
+          </button>
+          <button
+            class="map-pin-action map-pin-action-delete"
+            type="button"
+            @click.stop="removeActivePin"
+            @dblclick.stop
+            @pointerdown.stop
+            @mousedown.stop
+            @touchstart.stop
+          >
+            {{ t('common.delete') }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -157,6 +219,18 @@
 
     <aside class="map-tools map-tools-secondary" :aria-label="t('map.layers.shell.secondaryTools')">
       <button
+        v-if="pinAvailable"
+        class="map-tool map-icon-tool pin-trigger"
+        :class="{ active: pinPlacing }"
+        type="button"
+        :title="t('map.layers.shell.pinTool')"
+        :aria-label="t('map.layers.shell.pinTool')"
+        :aria-pressed="pinPlacing"
+        @click="togglePinPlacing"
+      >
+        <MapPinPlus :size="18" :stroke-width="1.9" aria-hidden="true" />
+      </button>
+      <button
         class="map-tool map-icon-tool more-trigger"
         :class="{ active: moreMenuVisible }"
         type="button"
@@ -191,6 +265,36 @@
       </button>
 
       <div v-if="moreMenuVisible" class="map-more-popup" role="menu" :aria-label="t('map.layers.maritime.section')">
+        <!-- Reference layers first (timezone / graticule), maritime layers below. -->
+        <button
+          class="map-more-popup-item"
+          :class="{ active: timezoneLayerEnabled }"
+          type="button"
+          role="menuitemcheckbox"
+          :aria-checked="timezoneLayerEnabled"
+          :disabled="timezoneLayerLoading"
+          @click="toggleTimezoneLayer"
+        >
+          <Clock3 :size="16" :stroke-width="1.9" aria-hidden="true" />
+          <span>{{ timezoneMetadata.shortName }}</span>
+          <span v-if="timezoneLayerEnabled" class="map-layer-remove">
+            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+          </span>
+        </button>
+        <button
+          class="map-more-popup-item"
+          :class="{ active: graticuleEnabled }"
+          type="button"
+          role="menuitemcheckbox"
+          :aria-checked="graticuleEnabled"
+          @click="toggleGraticule"
+        >
+          <Grid3X3 :size="16" :stroke-width="1.9" aria-hidden="true" />
+          <span>{{ t('map.layers.shell.graticule') }}</span>
+          <span v-if="graticuleEnabled" class="map-layer-remove">
+            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+          </span>
+        </button>
         <button
           v-for="option in maritimeOptions"
           :key="option.id"
@@ -204,29 +308,9 @@
         >
           <span class="map-layer-swatch" :style="{ background: option.color }"></span>
           <span>{{ option.shortName }}</span>
-        </button>
-        <button
-          class="map-more-popup-item"
-          :class="{ active: timezoneLayerEnabled }"
-          type="button"
-          role="menuitemcheckbox"
-          :aria-checked="timezoneLayerEnabled"
-          :disabled="timezoneLayerLoading"
-          @click="toggleTimezoneLayer"
-        >
-          <Clock3 :size="16" :stroke-width="1.9" aria-hidden="true" />
-          <span>{{ timezoneMetadata.shortName }}</span>
-        </button>
-        <button
-          class="map-more-popup-item"
-          :class="{ active: graticuleEnabled }"
-          type="button"
-          role="menuitemcheckbox"
-          :aria-checked="graticuleEnabled"
-          @click="toggleGraticule"
-        >
-          <Grid3X3 :size="16" :stroke-width="1.9" aria-hidden="true" />
-          <span>{{ t('map.layers.shell.graticule') }}</span>
+          <span v-if="maritimeLayerIds.has(option.id)" class="map-layer-remove">
+            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+          </span>
         </button>
       </div>
     </aside>
@@ -273,7 +357,9 @@
       >
         <span class="map-layer-swatch" :style="{ background: layer.color }"></span>
         <span>{{ layer.name }}</span>
-        <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+        <span class="map-layer-remove">
+          <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+        </span>
       </button>
     </aside>
 
@@ -292,6 +378,7 @@ import {
   Grid3X3,
   Layers3,
   List,
+  MapPinPlus,
   Route,
   Ruler,
   SquareDashedMousePointer,
@@ -302,11 +389,14 @@ import {
   X,
 } from 'lucide-vue-next'
 import { LeafletMapAdapter, type MeasureMode } from '@/components/map/leafletAdapter'
+import { formatCoordinate, formatCoordinateLabel } from '@/components/map/core/coordinates'
+import type { MapPin } from '@/components/map/controllers/types'
 import { basemaps } from '@/components/map/modules/base'
 import { maritimeLayerOptions, type MaritimeLayerId } from '@/components/map/modules/maritime'
 import type { MeteoPointQueryResult } from '@/components/map/modules/meteo'
 import type { MeteoLayerId } from '@/components/map/controllers/meteoLayerController'
 import { timezoneLayerMetadata } from '@/components/map/modules/timezone'
+import { useDistanceStore } from '@/stores/distance'
 import type { RoutePointConfig } from '@/types/map'
 import type { Port, RoutePathItem, RoutePoint } from '@/types/protocol'
 
@@ -321,11 +411,13 @@ const props = withDefaults(defineProps<{
   routeEditAvailable?: boolean
   turnEditAvailable?: boolean
   clearAvailable?: boolean
+  pinAvailable?: boolean
   errorMessage?: string | null
 }>(), {
   routeEditAvailable: true,
   turnEditAvailable: true,
   clearAvailable: true,
+  pinAvailable: true,
   errorMessage: null,
 })
 
@@ -357,6 +449,7 @@ interface MeteoLayerOption {
 }
 
 const { t, locale } = useI18n()
+const distance = useDistanceStore()
 
 const meteoLayerOptions = computed<MeteoLayerOption[]>(() => [
   { id: 'wind', shortName: t('map.layers.meteo.layer.wind'), icon: Wind },
@@ -385,6 +478,25 @@ const timezoneLayerLoading = ref(false)
 const graticuleEnabled = ref(false)
 const measureMode = ref<MeasureMode>(null)
 const measurePointCount = ref(0)
+const pinPlacing = ref(false)
+/** 地图上标点的数量：决定「清除全部标点」按钮是否出现（标点本身由 PinController 持有）。 */
+const pinCount = ref(0)
+/** 信息框当前对应的标点：最近放下或最近点中的那个，多个标点并存时跟着它切换。 */
+const activePin = ref<MapPin | null>(null)
+const pinInfoVisible = ref(false)
+/** The pin info box shows itself for four seconds, then hides until a pin is tapped again. */
+const PIN_INFO_DURATION = 4000
+/**
+ * 标点记住了自己加到港口列表的 portId：store 的 addCoordinatePort() 用
+ * `${longitude}~${latitude}` 生成 portId，清除标点时要按这个 portId 找回索引再删。
+ * 按标点 id 分组保存，重复添加同一个标点也不会漏删。
+ */
+const pinPortIds = new Map<number, string[]>()
+/**
+ * 已经加到港口列表的标点 id：地图上这些标点的位置由港口坐标点代表（PinController 会撤掉
+ * 标点自身的图形和 label），信息框里的「加到港口列表」因此置灰。用 reactive Set 让按钮跟着变。
+ */
+const pinsAddedToPorts = reactive(new Set<number>())
 const meteoQueryEnabled = ref(false)
 const meteoQueryLoading = ref(false)
 const meteoQueryResult = ref<MeteoPointQueryResult | null>(null)
@@ -403,6 +515,7 @@ const activeBasemapId = ref(basemapOptions.value[0]?.id || 'domestic')
 
 let mapAdapter: LeafletMapAdapter | null = null
 let mapHintTimer: ReturnType<typeof window.setTimeout> | null = null
+let pinInfoTimer: ReturnType<typeof window.setTimeout> | null = null
 let meteoQueryRequest: AbortController | null = null
 let meteoQueryVersion = 0
 
@@ -508,8 +621,133 @@ function clearMeasurement() {
   measurePointCount.value = 0
 }
 
-function formatCoordinate(value: number, positive: string, negative: string): string {
-  return `${Math.abs(value).toFixed(3)}°${value >= 0 ? positive : negative}`
+/** Same coordinate text as the pin label on the map (see formatCoordinateLabel). */
+const pinCoordinateText = computed(() => (activePin.value ? formatCoordinateLabel(activePin.value.lon, activePin.value.lat) : ''))
+
+/** 当前标点为什么不能「加到港口列表」：空字符串代表按钮可用（用于 title / aria-label）。 */
+const pinAddDisabledReason = computed(() => {
+  if (!activePin.value) return t('map.layers.shell.pinAddToPortsDisabled')
+  if (pinsAddedToPorts.has(activePin.value.id)) return t('map.layers.shell.pinAlreadyAdded')
+  if (distance.hasDistanceResult) return t('map.layers.shell.pinAddToPortsDisabled')
+  return ''
+})
+
+/**
+ * 已有航程结果时不允许再往港口列表加坐标点：加到港口列表本身会清空航程结果，
+ * 产品要求此时按钮置灰并说明原因（见按钮的 title / aria-label）。
+ * 已经加过的标点同样置灰，避免同一坐标加出重复的港口行。
+ */
+const canAddPinToPorts = computed(() => Boolean(activePin.value) && !pinAddDisabledReason.value)
+
+function clearPinInfoTimer() {
+  if (pinInfoTimer === null) return
+  window.clearTimeout(pinInfoTimer)
+  pinInfoTimer = null
+}
+
+function showPinInfo() {
+  clearPinInfoTimer()
+  if (!activePin.value) return
+  pinInfoVisible.value = true
+  pinInfoTimer = window.setTimeout(() => {
+    pinInfoVisible.value = false
+    pinInfoTimer = null
+  }, PIN_INFO_DURATION)
+}
+
+function hidePinInfo() {
+  clearPinInfoTimer()
+  pinInfoVisible.value = false
+}
+
+/** Leaving the pin placing mode for another tool: the pins themselves stay on the map. */
+function disablePinPlacing() {
+  if (!pinPlacing.value) return
+  mapAdapter?.setPinPlacingMode(false)
+  pinPlacing.value = false
+}
+
+/** The pin tool is exclusive with measuring, route editing and the meteo query tool. */
+function togglePinPlacing() {
+  const next = !pinPlacing.value
+  if (next) {
+    clearMeasureMode()
+    setMeteoQueryMode(false, true)
+    mapAdapter?.setRouteEditMode(false)
+    mapAdapter?.setTurnDragMode(false)
+    emit('edit-modes-disabled')
+    basemapMenuVisible.value = false
+    moreMenuVisible.value = false
+  }
+  pinPlacing.value = mapAdapter?.setPinPlacingMode(next) ?? false
+  if (pinPlacing.value) showNotice(t('map.layers.shell.pinPlacingHint'))
+}
+
+function addPinToPorts() {
+  const target = activePin.value
+  if (!target || !canAddPinToPorts.value) return
+  // `addCoordinatePort(latitude, longitude)` is the same entry point the distance tab's
+  // coordinate dialog uses.
+  distance.addCoordinatePort(target.lat, target.lon)
+  // The store appends the new coordinate row and builds its portId as `${longitude}~${latitude}`.
+  // Read that id back (instead of re-deriving the store's format here) so the pin remembers
+  // exactly which rows it owns and "clear all pins" can remove them again.
+  const addedRow = distance.portPoints[distance.portPoints.length - 1]
+  const isOwnRow = addedRow?.port.isCoordinate
+    && Number(addedRow.port.longitude) === target.lon
+    && Number(addedRow.port.latitude) === target.lat
+  if (isOwnRow) {
+    const owned = pinPortIds.get(target.id)
+    if (owned) owned.push(addedRow.port.portId)
+    else pinPortIds.set(target.id, [addedRow.port.portId])
+  }
+  // The port point now represents this coordinate: drop the pin's marker and its label, keep the
+  // record plus the invisible hit circle, and remember that its "add" button must stay disabled.
+  pinsAddedToPorts.add(target.id)
+  mapAdapter?.markPinAdded(target.id)
+  // The box closes right away instead of lingering over the port point that just appeared.
+  hidePinInfo()
+  showNotice(t('map.layers.shell.pinAddedNotice'))
+}
+
+/** Removes the ports every map pin added, looking each one up by its portId (indices shift). */
+function removeAddedPinPorts(portIds: string[]) {
+  portIds.forEach((portId) => {
+    const index = distance.portPoints.findIndex((row) => row.port.portId === portId)
+    if (index >= 0) distance.removePort(index)
+  })
+}
+
+/** The info box delete button: drops the pin the box refers to, just like before. */
+function removeActivePin() {
+  const target = activePin.value
+  if (!target) return
+  mapAdapter?.removePin(target.id)
+  activePin.value = null
+  hidePinInfo()
+}
+
+/**
+ * 清除全部标点（与测量工具的清除按钮同一位置/样式）。
+ * 地图上的标点、信息框一律清掉；这些标点加到港口列表里的坐标点则要看航程结果：
+ * 已经有航程结果时那些港口行已经参与过航线计算，删掉会让结果和港口列表对不上，
+ * 因此只清标点、保留港口行，并用提示说明原因（见 pinClearKeptPorts）。
+ */
+function clearPins() {
+  mapAdapter?.clearPins()
+  const keepsAddedPorts = distance.hasDistanceResult
+  const keptPortCount = keepsAddedPorts
+    ? [...pinPortIds.values()].reduce((total, portIds) => total + portIds.length, 0)
+    : 0
+  if (!keepsAddedPorts) {
+    pinPortIds.forEach((portIds) => removeAddedPinPorts(portIds))
+  }
+  pinPortIds.clear()
+  pinsAddedToPorts.clear()
+  pinCount.value = 0
+  activePin.value = null
+  hidePinInfo()
+  if (keptPortCount > 0) showNotice(t('map.layers.shell.pinClearKeptPorts'))
 }
 
 function formatValue(value: number | null | undefined, unit: string): string {
@@ -542,6 +780,7 @@ function toggleMeteoQuery() {
   const enabled = !meteoQueryEnabled.value
   if (enabled) {
     clearMeasureMode()
+    disablePinPlacing()
     mapAdapter?.setRouteEditMode(false)
     mapAdapter?.setTurnDragMode(false)
     emit('edit-modes-disabled')
@@ -557,6 +796,7 @@ function toggleMeteoPanel() {
   meteoPanelVisible.value = nextVisible
   if (nextVisible) {
     clearMeasureMode()
+    disablePinPlacing()
     setMeteoQueryMode(false, true)
     mapAdapter?.setRouteEditMode(false)
     mapAdapter?.setTurnDragMode(false)
@@ -631,12 +871,14 @@ function closeMeteoQuery() {
 
 function requestRouteEditToggle() {
   clearMeasureMode()
+  disablePinPlacing()
   setMeteoQueryMode(false, true)
   emit('route-edit-toggle')
 }
 
 function requestTurnEditToggle() {
   clearMeasureMode()
+  disablePinPlacing()
   setMeteoQueryMode(false, true)
   emit('turn-edit-toggle')
 }
@@ -644,6 +886,7 @@ function requestTurnEditToggle() {
 function toggleMeasure(mode: Exclude<MeasureMode, null>) {
   const nextMode = measureMode.value === mode ? null : mode
   if (nextMode) {
+    disablePinPlacing()
     setMeteoQueryMode(false, true)
     mapAdapter?.setRouteEditMode(false)
     mapAdapter?.setTurnDragMode(false)
@@ -708,6 +951,7 @@ function closeActiveLayer(id: string) {
 
 function clearInteractionModes() {
   clearMeasureMode()
+  disablePinPlacing()
   setMeteoQueryMode(false, true)
   mapAdapter?.setRouteEditMode(false)
   mapAdapter?.setTurnDragMode(false)
@@ -716,6 +960,12 @@ function clearInteractionModes() {
 function reset() {
   mapAdapter?.reset()
   measureMode.value = null
+  pinPlacing.value = false
+  pinCount.value = 0
+  activePin.value = null
+  pinPortIds.clear()
+  pinsAddedToPorts.clear()
+  hidePinInfo()
   closeMeteoQuery()
   closeMeteoPanel()
 }
@@ -773,6 +1023,20 @@ onMounted(async () => {
       onMeasurementChange: ({ pointCount }) => {
         measurePointCount.value = pointCount
       },
+      onPinPlaced: (placedPin) => {
+        activePin.value = placedPin
+        showPinInfo()
+      },
+      onPinClick: (tappedPin) => {
+        activePin.value = tappedPin
+        showPinInfo()
+      },
+      onPinCountChange: (count) => {
+        pinCount.value = count
+      },
+      onPinPlacingChange: (placing) => {
+        pinPlacing.value = placing
+      },
     })
     mapReady.value = true
     syncRoutePointConfig()
@@ -787,6 +1051,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown, true)
   if (mapHintTimer) window.clearTimeout(mapHintTimer)
+  clearPinInfoTimer()
   meteoQueryRequest?.abort()
   mapAdapter?.destroy()
   mapAdapter = null
@@ -805,3 +1070,119 @@ defineExpose({
   invalidateSize,
 })
 </script>
+
+<style scoped>
+/*
+ * 标点信息框：半透明浮层（同 .map-error / .map-notice 的定位约定），
+ * 放在左上角避开左下角的已启用图层 chip 与右下的工具列。
+ */
+.map-overlay.map-pin-info {
+  top: calc(16px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px)));
+  right: auto;
+  left: 10px;
+  display: block;
+  width: min(238px, calc(100% - 84px));
+  padding: 8px 10px 9px;
+  border: 1px solid var(--line, rgba(16, 42, 67, 0.16));
+  border-radius: 8px;
+  /* 半透明，避免完全挡住底下的地图 */
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.2);
+  backdrop-filter: blur(3px);
+  /* 浮层自己接收点击，否则会穿透到地图 */
+  pointer-events: auto;
+}
+
+.map-pin-coordinate {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  color: var(--ink-2, #334e68);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.map-pin-coordinate strong {
+  color: var(--ink-1, #102a43);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.map-pin-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.map-pin-action {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid rgba(16, 42, 67, 0.24);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-pin-action-add {
+  border-color: #007986;
+  background: #007986;
+  color: #ffffff;
+}
+
+.map-pin-action-delete {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--danger, #b83b2e);
+}
+
+/* 已有航程结果时「加到港口列表」置灰，原因见按钮的 title / aria-label */
+.map-pin-action-add:disabled {
+  border-color: rgba(16, 42, 67, 0.18);
+  background: rgba(16, 42, 67, 0.12);
+  color: var(--ink-2, #334e68);
+  cursor: not-allowed;
+}
+
+/*
+ * 图层删除按钮统一命中区：气泡行与已启用图层 chip 都用同一图标（X 13 / 2.2）
+ * 和同一个 20×20 命中盒，外层按钮（≥32px）仍是实际点击区域。
+ */
+.map-layer-remove {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border-radius: 4px;
+}
+
+.map-more-popup :deep(.map-more-popup-item) {
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+}
+
+.map-more-popup :deep(.map-more-popup-item > span:nth-child(2)) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 落点模式下的十字光标（类加在 Leaflet 容器即 .map-view 上） */
+.map-view.pin-placing-mode-active {
+  cursor: crosshair;
+}
+
+/*
+ * 标点透明命中圈：fill/stroke 都是透明的，默认不接收指针事件；
+ * 比照 .leaflet-route-hit-line 的做法在这里显式打开命中。
+ */
+.map-view :deep(path.leaflet-pin-hit-circle.leaflet-interactive) {
+  pointer-events: all;
+  cursor: pointer;
+}
+</style>

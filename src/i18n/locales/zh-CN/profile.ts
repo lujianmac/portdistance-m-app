@@ -5,7 +5,7 @@ export default {
     title: '我的',
     defaultName: 'PortDistance 用户',
     emailFallback: '未加载账户邮箱',
-    account: '账户信息',
+    account: '修改昵称',
     email: '修改邮箱',
     password: '修改密码',
     ships: '船舶规范',
@@ -21,7 +21,7 @@ export default {
   },
   // 账户信息
   account: {
-    title: '账户信息',
+    title: '修改昵称',
     nameLabel: '昵称',
     namePlaceholder: '请输入昵称',
     emailLabel: '账户邮箱',

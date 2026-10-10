@@ -5,7 +5,7 @@ export default {
     title: 'Me',
     defaultName: 'PortDistance User',
     emailFallback: 'Email not loaded',
-    account: 'Account Information',
+    account: 'Edit Nickname',
     email: 'Change Email',
     password: 'Change Password',
     ships: 'Vessel Specifications',
@@ -21,7 +21,7 @@ export default {
   },
   // Account information
   account: {
-    title: 'Account Information',
+    title: 'Edit Nickname',
     nameLabel: 'Nickname',
     namePlaceholder: 'Enter nickname',
     emailLabel: 'Account email',

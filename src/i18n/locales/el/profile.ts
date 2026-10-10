@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'Εγώ',
+    defaultName: 'Χρήστης PortDistance',
+    emailFallback: 'Το email δεν φορτώθηκε',
+    account: 'Αλλαγή ψευδωνύμου',
+    email: 'Αλλαγή email',
+    password: 'Αλλαγή κωδικού',
+    ships: 'Στοιχεία πλοίου',
+    language: 'Γλώσσα',
+    purchases: 'Ιστορικό αγορών',
+    contact: 'Επικοινωνία',
+    share: 'Κοινοποίηση εφαρμογής',
+    version: 'Έκδοση',
+    logout: 'Αποσύνδεση',
+    logoutMessage: 'Είστε σίγουροι ότι θέλετε να αποσυνδεθείτε από τον τρέχοντα λογαριασμό;',
+    logoutConfirm: 'Αποσύνδεση',
+    shareText: 'PortDistance — εργαλείο υπολογισμού απόστασης και εκτίμησης ταξιδιού',
+  },
+  // Account information
+  account: {
+    title: 'Αλλαγή ψευδωνύμου',
+    nameLabel: 'Ψευδώνυμο',
+    namePlaceholder: 'Εισάγετε ψευδώνυμο',
+    emailLabel: 'Email λογαριασμού',
+    save: 'Αποθήκευση ψευδωνύμου',
+    saved: 'Το ψευδώνυμο ενημερώθηκε',
+  },
+  // Change email
+  email: {
+    title: 'Αλλαγή email',
+    newEmailLabel: 'Νέο email',
+    newEmailPlaceholder: 'Εισάγετε νέο email',
+    codeLabel: 'Κωδικός επαλήθευσης email',
+    codePlaceholder: 'Εισάγετε κωδικό επαλήθευσης',
+    sendCode: 'Αποστολή κωδικού',
+    codeSent: 'Ο κωδικός επαλήθευσης στάλθηκε',
+    sendCodeFailed: 'Η αποστολή email απέτυχε',
+    save: 'Αποθήκευση email',
+    saved: 'Το email ενημερώθηκε',
+    saveFailed: 'Η ενημέρωση του email απέτυχε',
+  },
+  // Change password
+  password: {
+    title: 'Αλλαγή κωδικού',
+    oldLabel: 'Τρέχων κωδικός',
+    oldPlaceholder: 'Εισάγετε τον τρέχοντα κωδικό',
+    newLabel: 'Νέος κωδικός',
+    newPlaceholder: '6–16 χαρακτήρες',
+    save: 'Αποθήκευση νέου κωδικού',
+    updated: 'Ο κωδικός ενημερώθηκε',
+  },
+  // Contact us
+  contact: {
+    title: 'Επικοινωνία',
+    service: 'Εξυπηρέτηση πελατών',
+    support: 'Τεχνική υποστήριξη',
+    supportDescription: 'Για δεδομένα ταξιδιού, χρήση του χάρτη και τεχνικά ζητήματα, επικοινωνήστε με την τεχνική υποστήριξη.',
+    wechat: 'WeChat',
+    email: 'Email',
+  },
+  // Purchase records
+  purchases: {
+    title: 'Ιστορικό αγορών',
+    refresh: 'Ανανέωση ιστορικού αγορών',
+    loadFailed: 'Η φόρτωση του ιστορικού αγορών απέτυχε',
+    currentSubscription: 'Τρέχουσα συνδρομή',
+    validity: 'Περίοδος ισχύος',
+    dateRange: '{start} έως {end}',
+    defaultPlan: 'Συνδρομή υπηρεσίας PortDistance',
+    noActiveSubscription: 'Δεν υπάρχει ενεργή συνδρομή',
+    paymentRecords: 'Ιστορικό πληρωμών',
+    empty: 'Δεν υπάρχουν αγορές',
+    orderNo: 'Παραγγελία {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: 'Πληρωμή',
+    notRecorded: 'Δεν καταγράφηκε',
+  },
+}

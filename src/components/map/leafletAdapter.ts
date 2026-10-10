@@ -7,6 +7,7 @@ import { GraticuleController } from '@/components/map/controllers/graticuleContr
 import { MaritimeLayerController } from '@/components/map/controllers/maritimeLayerController'
 import { MeasurementController } from '@/components/map/controllers/measurementController'
 import { MeteoLayerController, type MeteoLayerId } from '@/components/map/controllers/meteoLayerController'
+import { PinController } from '@/components/map/controllers/pinController'
 import { RouteLayerController } from '@/components/map/controllers/routeLayerController'
 import { TimezoneLayerController } from '@/components/map/controllers/timezoneLayerController'
 import type { LeafletMapCallbacks, MapCoordinates, MeasureMode } from '@/components/map/controllers/types'
@@ -32,12 +33,14 @@ export class LeafletMapAdapter {
 
   private graticuleLayer = L.layerGroup()
   private measureLayer = L.layerGroup()
+  private pinLayer = L.layerGroup()
   private meteoQueryLayer = L.layerGroup()
   private meteoQueryPoint: [number, number] | null = null
   private ecaLayerController: EcaLayerController | null = null
   private routeLayerController: RouteLayerController | null = null
   private graticuleController: GraticuleController | null = null
   private measurementController: MeasurementController | null = null
+  private pinController: PinController | null = null
   private meteoLayerController: MeteoLayerController | null = null
   private maritimeLayerController: MaritimeLayerController | null = null
   private timezoneLayerController: TimezoneLayerController | null = null
@@ -111,6 +114,17 @@ export class LeafletMapAdapter {
       },
     })
     this.ecaLayerController = new EcaLayerController({ map, coordinates, pane: 'eca-pane' })
+    this.pinController = new PinController({
+      map,
+      layer: this.pinLayer,
+      coordinates,
+      pane: 'port-pane',
+      hitPane: 'edit-pane',
+      onPinPlaced: (pin) => this.callbacks.onPinPlaced?.(pin),
+      onPinClick: (pin) => this.callbacks.onPinClick?.(pin),
+      onPlacingChange: (placing) => this.callbacks.onPinPlacingChange?.(placing),
+      onPinCountChange: (count) => this.callbacks.onPinCountChange?.(count),
+    })
     this.meteoLayerController = new MeteoLayerController({
       map,
       vectorPane: 'meteo-vector-pane',
@@ -133,6 +147,7 @@ export class LeafletMapAdapter {
     this.baseLayers.get(firstMap.id)?.addTo(this.map)
 
     this.measureLayer.addTo(this.map)
+    this.pinLayer.addTo(this.map)
     this.meteoQueryLayer.addTo(this.map)
 
     this.map.attributionControl.setPrefix(false)
@@ -224,6 +239,7 @@ export class LeafletMapAdapter {
     this.routeLayerController?.refresh()
     this.measurementController?.refresh()
     this.graticuleController?.refresh()
+    this.pinController?.refresh()
     this.renderMeteoQueryPoint()
     return this.activeBasemapId
   }
@@ -308,6 +324,7 @@ export class LeafletMapAdapter {
   reset(): void {
     this.routeLayerController?.reset()
     this.setMeasureMode(null)
+    this.pinController?.reset()
   }
 
   private readonly handleMapClick = (event: L.LeafletMouseEvent) => {
@@ -316,6 +333,8 @@ export class LeafletMapAdapter {
     const target = event.originalEvent?.target as HTMLElement | null
     if (target && typeof target.closest === 'function' && target.closest('.map-overlay')) return
     if (this.measurementController?.handleMapClick(event)) return
+    // The pin tool consumes the taps that drop a pin; every other click passes through.
+    if (this.pinController?.handleMapClick(event)) return
     if (this.meteoQueryMode) {
       const [lon, lat] = this.toBusinessCoordinate(event.latlng.lng, event.latlng.lat)
       this.callbacks.onMeteoQueryRequest?.({ lon, lat })
@@ -398,6 +417,29 @@ export class LeafletMapAdapter {
     this.measurementController?.clearMeasurement()
   }
 
+  /** Turns the "drop a pin" tap mode on/off; it stays on (continuous pinning) until switched off again. */
+  setPinPlacingMode(enabled: boolean): boolean {
+    return this.pinController?.setPlacing(enabled) ?? false
+  }
+
+  /** Removes a single pin (the info box delete button). */
+  removePin(id: number): void {
+    this.pinController?.removePin(id)
+  }
+
+  /**
+   * Marks a pin as already added to the port list: its coordinate is now drawn by the port
+   * point, so the pin drops its visible marker/label but keeps its tap target.
+   */
+  markPinAdded(id: number): void {
+    this.pinController?.markPinAdded(id)
+  }
+
+  /** Removes every pin from the map (the "clear all pins" button). */
+  clearPins(): void {
+    this.pinController?.clearPins()
+  }
+
   setMeteoQueryMode(enabled: boolean): boolean {
     this.meteoQueryMode = enabled
     this.map?.getContainer().classList.toggle('meteo-query-mode-active', enabled)
@@ -465,6 +507,9 @@ export class LeafletMapAdapter {
       graticuleVisible: this.graticuleController?.isVisible() ?? false,
       measureMode: this.measurementController?.getMode() ?? null,
       measurePointCount: this.measurementController?.getPointCount() ?? 0,
+      pinPlacing: this.pinController?.isPlacing() ?? false,
+      pinPlaced: this.pinController?.hasPins() ?? false,
+      pinCount: this.pinController?.getPinCount() ?? 0,
       activeBasemapId: this.activeBasemapId,
       zoom: this.map?.getZoom() ?? null,
     }
@@ -475,6 +520,7 @@ export class LeafletMapAdapter {
     this.map?.off('mousemove', this.handleMeasureMouseMove)
     this.map?.off('dblclick', this.handleMeasureDoubleClick)
     this.map?.getContainer().classList.remove('meteo-query-mode-active')
+    this.map?.getContainer().classList.remove('pin-placing-mode-active')
     this.map?.stop()
     this.zoomControl?.remove()
     this.zoomControl = null
@@ -483,6 +529,7 @@ export class LeafletMapAdapter {
     this.routeLayerController?.destroy()
     this.graticuleController?.destroy()
     this.measurementController?.destroy()
+    this.pinController?.destroy()
     this.meteoLayerController?.destroy()
     this.maritimeLayerController?.destroy()
     this.timezoneLayerController?.destroy()
@@ -491,6 +538,7 @@ export class LeafletMapAdapter {
     this.meteoQueryPoint = null
     this.graticuleController = null
     this.measurementController = null
+    this.pinController = null
     this.routeLayerController = null
     this.ecaLayerController = null
     this.meteoLayerController = null
@@ -498,6 +546,7 @@ export class LeafletMapAdapter {
     this.timezoneLayerController = null
     this.graticuleLayer.clearLayers()
     this.measureLayer.clearLayers()
+    this.pinLayer.clearLayers()
     this.map?.remove()
     this.map = null
   }

@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'Σύνδεση',
+    subtitle: 'Συνδεθείτε για να συνεχίσετε τον σχεδιασμό ταξιδιών και τις εκτιμήσεις ταξιδιού.',
+    email: 'Email',
+    emailPlaceholder: 'Εισάγετε email',
+    password: 'Κωδικός πρόσβασης',
+    passwordPlaceholder: 'Εισάγετε κωδικό πρόσβασης',
+    togglePassword: 'Εναλλαγή ορατότητας κωδικού',
+    submit: 'Σύνδεση',
+    forgotPassword: 'Ξεχάσατε τον κωδικό σας;',
+    register: 'Δημιουργία λογαριασμού',
+    failed: 'Η σύνδεση απέτυχε, δοκιμάστε ξανά αργότερα',
+  },
+  // Register page
+  register: {
+    title: 'Εγγραφή',
+    email: 'Email',
+    emailPlaceholder: 'Εισάγετε email',
+    nickname: 'Ψευδώνυμο (προαιρετικό)',
+    nicknamePlaceholder: 'Εισάγετε ψευδώνυμο',
+    code: 'Κωδικός επαλήθευσης email',
+    codePlaceholder: 'Εισάγετε κωδικό επαλήθευσης',
+    sendCode: 'Αποστολή κωδικού',
+    password: 'Κωδικός πρόσβασης',
+    passwordPlaceholder: '6–16 χαρακτήρες',
+    submit: 'Εγγραφή και σύνδεση',
+    termsPrefix: 'Με την εγγραφή σας συμφωνείτε με τους',
+    termsLink: 'Όρους Χρήσης',
+    termsConjunction: 'και την',
+    privacyLink: 'Πολιτική Απορρήτου',
+    termsSuffix: '.',
+    haveAccount: 'Έχετε λογαριασμό; Συνδεθείτε',
+    sendCodeFailed: 'Η αποστολή email απέτυχε',
+    failed: 'Η εγγραφή απέτυχε',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'Επαναφορά κωδικού',
+    email: 'Email σύνδεσης',
+    emailPlaceholder: 'Εισάγετε email',
+    code: 'Κωδικός επαλήθευσης email',
+    codePlaceholder: 'Εισάγετε κωδικό επαλήθευσης',
+    sendCode: 'Αποστολή κωδικού',
+    password: 'Νέος κωδικός πρόσβασης',
+    passwordPlaceholder: '6–16 χαρακτήρες',
+    submit: 'Επαναφορά κωδικού',
+    sendCodeFailed: 'Η αποστολή email απέτυχε',
+    failed: 'Η επαναφορά κωδικού απέτυχε',
+  },
+}

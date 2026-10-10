@@ -15,7 +15,15 @@ import { rolldown } from 'rolldown'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const srcDir = path.join(root, 'src')
 const localeDir = path.join(srcDir, 'i18n', 'locales')
-const LOCALES = ['zh-CN', 'en-US']
+/**
+ * Locales are discovered from the directory tree, so adding a language cannot leave it
+ * unvalidated. `en-US` is the reference tree (it is also the runtime fallback).
+ */
+const LOCALES = fs
+  .readdirSync(localeDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(localeDir, entry.name, 'index.ts')))
+  .map((entry) => entry.name)
+  .sort((a, b) => (a === 'en-US' ? -1 : b === 'en-US' ? 1 : a.localeCompare(b)))
 const HAN = /[\u4e00-\u9fff]/
 
 /** Bundle a TS module and return its default export. */
@@ -72,39 +80,40 @@ for (const locale of LOCALES) {
   messages[locale] = flatten(await loadDefaultExport(entry))
 }
 
-const [zh, en] = LOCALES.map((locale) => messages[locale])
+const en = messages['en-US']
+const zh = messages['zh-CN']
 
-if (zh && en) {
-  for (const key of zh.keys()) if (!en.has(key)) problems.push(`en-US is missing key: ${key}`)
-  for (const key of en.keys()) if (!zh.has(key)) problems.push(`zh-CN is missing key: ${key}`)
-  for (const [key, value] of zh) {
-    if (typeof value !== 'string') problems.push(`zh-CN value is not a string: ${key}`)
-    else if (!value.trim()) problems.push(`zh-CN value is empty: ${key}`)
-  }
-  for (const [key, value] of en) {
-    if (typeof value !== 'string') problems.push(`en-US value is not a string: ${key}`)
-    else if (!value.trim()) problems.push(`en-US value is empty: ${key}`)
-  }
+/** Named placeholders must match across locales, otherwise interpolated values disappear. */
+const placeholders = (value) => new Set([...String(value).matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((match) => match[1]))
 
-  // Named placeholders must match across locales, otherwise interpolated values disappear.
-  const placeholders = (value) => new Set([...String(value).matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((match) => match[1]))
-  for (const [key, value] of zh) {
-    if (typeof value !== 'string' || typeof en.get(key) !== 'string') continue
-    const zhParams = placeholders(value)
-    const enParams = placeholders(en.get(key))
-    for (const name of zhParams) if (!enParams.has(name)) problems.push(`en-US:${key} is missing placeholder {${name}} used by zh-CN`)
-    for (const name of enParams) if (!zhParams.has(name)) problems.push(`zh-CN:${key} is missing placeholder {${name}} used by en-US`)
-  }
+if (en) {
+  for (const locale of LOCALES) {
+    const tree = messages[locale]
+    if (!tree) continue
 
-  // A raw `|` is a vue-i18n plural separator and silently truncates the message.
-  for (const [key, value] of [...zh, ...en]) {
-    if (typeof value === 'string' && value.includes('|') && !value.includes("{'|'}")) {
-      problems.push(`${key}: raw "|" in message — vue-i18n treats it as a plural separator, escape it as {'|'}`)
+    // 1. every locale must expose exactly the en-US key paths
+    for (const key of en.keys()) if (!tree.has(key)) problems.push(`${locale} is missing key: ${key}`)
+    for (const key of tree.keys()) if (!en.has(key)) problems.push(`${locale} has a key that en-US does not: ${key}`)
+
+    for (const [key, value] of tree) {
+      if (typeof value !== 'string') problems.push(`${locale} value is not a string: ${key}`)
+      else if (!value.trim()) problems.push(`${locale} value is empty: ${key}`)
+      // A raw `|` is a vue-i18n plural separator and silently truncates the message.
+      else if (value.includes('|') && !value.includes("{'|'}")) {
+        problems.push(`${locale}:${key}: raw "|" in message — vue-i18n treats it as a plural separator, escape it as {'|'}`)
+      }
+
+      const reference = en.get(key)
+      if (typeof value !== 'string' || typeof reference !== 'string') continue
+      const translated = placeholders(value)
+      const expected = placeholders(reference)
+      for (const name of expected) if (!translated.has(name)) problems.push(`${locale}:${key} is missing placeholder {${name}}`)
+      for (const name of translated) if (!expected.has(name)) problems.push(`${locale}:${key} has an extra placeholder {${name}}`)
     }
   }
 }
 
-const knownKeys = new Set([...(zh?.keys() ?? []), ...(en?.keys() ?? [])])
+const knownKeys = new Set(LOCALES.flatMap((locale) => [...(messages[locale]?.keys() ?? [])]))
 const usedKeys = new Map()
 
 for (const file of walk(srcDir)) {
@@ -139,4 +148,4 @@ if (problems.length) {
   process.exit(1)
 }
 
-console.log(`i18n check passed: ${zh.size} keys per locale, ${usedKeys.size} keys referenced in src/.`)
+console.log(`i18n check passed: ${en?.size ?? 0} keys × ${LOCALES.length} locales (${LOCALES.join(', ')}), ${usedKeys.size} keys referenced in src/.`)

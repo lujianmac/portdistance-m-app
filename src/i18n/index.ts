@@ -1,11 +1,23 @@
 import { createI18n } from 'vue-i18n'
 import zhCN from './locales/zh-CN'
 import enUS from './locales/en-US'
+import ja from './locales/ja'
+import ko from './locales/ko'
+import el from './locales/el'
+import ru from './locales/ru'
+import es from './locales/es'
+import tr from './locales/tr'
 import { DEFAULT_LOCALE, FALLBACK_LOCALE, isAppLocale, localeOption, type AppLocale } from './locales/meta'
 
 export const messages = {
   'zh-CN': zhCN,
   'en-US': enUS,
+  ja,
+  ko,
+  el,
+  ru,
+  es,
+  tr,
 }
 
 /**

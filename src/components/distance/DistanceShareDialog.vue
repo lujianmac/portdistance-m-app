@@ -645,7 +645,7 @@ function handleDismiss() {
   margin: 6px 0 0;
   color: #173447;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.5;
   word-break: break-word;
 }

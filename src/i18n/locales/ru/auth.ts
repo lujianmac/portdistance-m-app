@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'Вход',
+    subtitle: 'Войдите, чтобы продолжить планирование рейсов и расчёт бюджета рейса.',
+    email: 'Эл. почта',
+    emailPlaceholder: 'Введите адрес эл. почты',
+    password: 'Пароль',
+    passwordPlaceholder: 'Введите пароль',
+    togglePassword: 'Показать или скрыть пароль',
+    submit: 'Войти',
+    forgotPassword: 'Забыли пароль?',
+    register: 'Создать аккаунт',
+    failed: 'Не удалось войти, повторите попытку позже',
+  },
+  // Register page
+  register: {
+    title: 'Регистрация',
+    email: 'Эл. почта',
+    emailPlaceholder: 'Введите адрес эл. почты',
+    nickname: 'Никнейм (необязательно)',
+    nicknamePlaceholder: 'Введите никнейм',
+    code: 'Код из письма',
+    codePlaceholder: 'Введите код из письма',
+    sendCode: 'Отправить код',
+    password: 'Пароль',
+    passwordPlaceholder: '6–16 символов',
+    submit: 'Зарегистрироваться и войти',
+    termsPrefix: 'Регистрируясь, вы соглашаетесь с',
+    termsLink: 'Условиями использования',
+    termsConjunction: 'и',
+    privacyLink: 'Политикой конфиденциальности',
+    termsSuffix: '.',
+    haveAccount: 'Уже есть аккаунт? Войти',
+    sendCodeFailed: 'Не удалось отправить письмо',
+    failed: 'Не удалось зарегистрироваться',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'Сброс пароля',
+    email: 'Эл. почта для входа',
+    emailPlaceholder: 'Введите адрес эл. почты',
+    code: 'Код из письма',
+    codePlaceholder: 'Введите код из письма',
+    sendCode: 'Отправить код',
+    password: 'Новый пароль',
+    passwordPlaceholder: '6–16 символов',
+    submit: 'Сбросить пароль',
+    sendCodeFailed: 'Не удалось отправить письмо',
+    failed: 'Не удалось сбросить пароль',
+  },
+}

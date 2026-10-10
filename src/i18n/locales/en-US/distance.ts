@@ -6,7 +6,7 @@ export default {
   },
   // Port search
   search: {
-    portPlaceholder: 'Enter port name',
+    portPlaceholder: 'Search port',
     noSuggestions: 'No suggestions',
   },
   // Recently entered ports

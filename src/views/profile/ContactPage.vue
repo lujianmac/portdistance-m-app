@@ -18,5 +18,12 @@ async function copy(value: string) { await copyText(value); const toast = await 
 </script>
 
 <style scoped>
+/* 客服 / 技术支持标题：ion-card-title 的默认字号来自组件自身（iOS 1.75rem=28px、
+   MD 1.25rem=20px），不是共享的 .page-card-title（16px，其他页面在用），
+   所以这里只在本页各减 4px（上一轮减 2px 后仍偏大，本轮再减 2px）：iOS 24px、MD 16px。
+   用 calc 保留 rem 基准，系统动态字号仍然生效；全局样式一律不动。 */
+ion-card-title { font-size: calc(1.75rem - 4px); }
+html.md ion-card-title { font-size: calc(1.25rem - 4px); }
+
 ion-card p { margin: 0; color: #607486; line-height: 1.55; } ion-note { max-width: 58%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

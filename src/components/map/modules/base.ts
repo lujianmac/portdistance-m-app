@@ -49,15 +49,16 @@ export function basemaps(defaultMapSource = true): BaseMapConfig[] {
       maxZoom: 19
     },
     {
-      id: 'domestic',
-      name: t('map.layers.basemap.domestic'),
-      shortName: t('map.layers.basemap.domesticShort'),
-      lineColor: '#a1443b',
-      urlTemplate: DOMESTIC_VECTOR_URL,
-      previewUrl: 'https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=26&y=13&z=5',
-      attribution: t('map.layers.basemap.attributionDomestic'),
-      coordinateSystem: 'gcj02',
-      maxZoom: 18
+      id: 'ocean',
+      name: t('map.layers.basemap.ocean'),
+      shortName: t('map.layers.basemap.oceanShort'),
+      lineColor: '#006c8c',
+      urlTemplate: OCEAN_BASE_URL,
+      overlayUrlTemplate: OCEAN_REFERENCE_URL,
+      previewUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/5/13/26',
+      attribution: '&copy; Esri, GEBCO, NOAA, National Geographic, DeLorme, NAVTEQ',
+      coordinateSystem: 'wgs84',
+      maxZoom: 13
     },
     {
       id: 'satellite',
@@ -72,19 +73,21 @@ export function basemaps(defaultMapSource = true): BaseMapConfig[] {
       maxZoom: 18
     },
     {
-      id: 'ocean',
-      name: t('map.layers.basemap.ocean'),
-      shortName: t('map.layers.basemap.oceanShort'),
-      lineColor: '#006c8c',
-      urlTemplate: OCEAN_BASE_URL,
-      overlayUrlTemplate: OCEAN_REFERENCE_URL,
-      previewUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/5/13/26',
-      attribution: '&copy; Esri, GEBCO, NOAA, National Geographic, DeLorme, NAVTEQ',
-      coordinateSystem: 'wgs84',
-      maxZoom: 13
+      id: 'domestic',
+      name: t('map.layers.basemap.domestic'),
+      shortName: t('map.layers.basemap.domesticShort'),
+      lineColor: '#a1443b',
+      urlTemplate: DOMESTIC_VECTOR_URL,
+      previewUrl: 'https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=26&y=13&z=5',
+      attribution: t('map.layers.basemap.attributionDomestic'),
+      coordinateSystem: 'gcj02',
+      maxZoom: 18
     }
   ]
-  return defaultMapSource ? maps : [...maps].reverse()
+  // 排序：默认 → 海洋 → 卫星 → 国内（国内底图固定排最后）。
+  // 非大陆地区不能把国内底图顶到最前面（GCJ-02 瓦片、中文注记，且初始化会把它当默认底图），
+  // 所以这里把首项「默认」挪到末尾、其余保持相对顺序，而不是整体倒序。
+  return defaultMapSource ? maps : [...maps.slice(1), maps[0]]
 }
 
 // 根据 basemapId 选择当前底图，找不到时回退到默认底图。

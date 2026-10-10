@@ -38,6 +38,16 @@ function resetDistance(row: DistanceRow): DistanceRow {
   return { ...row, distance: 0, ecaDistance: 0 }
 }
 
+/**
+ * 中文输入法（拼音）在字母还没上屏时会插入音节分隔符：想打 “dalian”，输入框里
+ * 依次是 `da`、`da l`、`da'l`，后端按英文字母匹配就断在 `da` 上。
+ * 因此只把发给接口的查询归一化：去掉全部空白（含全角空格与 NBSP）和撇号后转小写，
+ * 让 `da l` / `da'l` / `DA L` 都按 `dal` 查询。输入框里显示的内容不受影响。
+ */
+function normalizePortQuery(keyword: string) {
+  return keyword.replace(/[\s\u3000\u00a0'’`]/g, '').toLowerCase()
+}
+
 function rowFor(port: PortInfo): DistanceRow {
   return {
     port: {
@@ -234,7 +244,8 @@ export const useDistanceStore = defineStore('distance', () => {
 
   async function searchPorts(keyword: string) {
     const requestVersion = ++searchRequestVersion
-    const query = keyword.trim()
+    // 只归一化发给接口的查询；输入框仍显示用户原始输入（含输入法分隔符）
+    const query = normalizePortQuery(keyword)
     if (!query) {
       if (requestVersion === searchRequestVersion) suggestPorts.value = []
       return

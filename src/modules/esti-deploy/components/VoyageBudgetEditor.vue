@@ -1083,25 +1083,64 @@ function messageOf(cause: unknown, fallback: string) {
   padding-inline-end: 0;
 }
 
-/* ===== 浮动标签（label-placement="floating"）统一间距 =====
-   Ionic 的浮动 label 用 translateY(50%) scale(.75) 贴到控件顶部，数值文本在
-   .native-wrapper（flex-grow: 1）里垂直居中。控件自身高度不够时这段剩余空间为 0，
-   label 和数值就挤在一起；所以统一抬高控件 min-height，把多出来的高度让给数值文本，
-   --padding-top/--padding-bottom 都收小，数值才会落在控件中下部、单行控件不偏心。 */
+/* ===== 浮动标签（label-placement="floating"）统一度量 =====
+   Ionic 把浮动 label（translateY(50%) scale(.75)）和数值放在同一个 .input-control 列里，
+   数值在剩下的 .native-wrapper 中垂直居中，--padding-top 在列外（只是把整列往下推）。
+   所以：label ↔ 数值的间距由控件总高决定；数值 ↔ 下划线的间距 = 控件底部留白 +
+   item 居中多出来的空隙（item 的 --min-height 高于控件时，多出的高度上下各一半）。
+   实测（390pt 宽、Avenir Next，基准 16px）：控件 56px / padding-bottom 4px 时
+   label ↔ 数值只有 4.2px，数值 ↔ 下划线却有 16.7px；换成下面 62px / 6px / 0px 之后
+   label ↔ 数值 ≈ 8.2px（+4px，各处一致），数值 ↔ 下划线 ≈ 13.7px（−3px；只有列表里
+   没有 --min-height 的「名称」输入框少 3px 余量，其下划线间距保持原样、没有被拉大）。
+
+   min-height 必须 !important：Ionic 自带的
+   .input-label-placement-floating.sc-ion-input-md-h { min-height: 56px } 特异性高于
+   ion-input.input-label-placement-floating，否则高度被压回 56px，item 里空出来的 6px
+   会平摊到数值上下，正好把「下划线间距偏大」留在原处。
+   字号同样要 !important：app.css 用 ion-input / ion-select / input { font-size: 16px !important }
+   锁死 16px；这里统一 +1px，label 文字继承宿主字号，数值要单独命中（见下一条）。 */
 ion-input.input-label-placement-floating,
 ion-select.select-label-placement-floating {
-  min-height: 68px;
+  min-height: 62px !important;
   --padding-top: 6px;
-  --padding-bottom: 4px;
+  --padding-bottom: 0;
   --padding-start: 0;
   --padding-end: 0;
+  font-size: 17px !important;
+}
+/* Ionic 9 的 ion-input 内部是 light DOM（scoped）而非 shadow DOM，::part(native) 命中不了，
+   数值文本必须用 :deep()；ion-select 的数值在 shadow DOM 里，用 ::part(text)。 */
+ion-input.input-label-placement-floating :deep(input),
+ion-select.select-label-placement-floating::part(text) {
+  font-size: 17px !important;
+}
+/* label ↔ 数值再 +4px（用户本轮要求）。Ionic 把浮动 label 定位成
+   translateY(50%) scale(.75)（50% 是 label 自身高度的一半），这个位移只改 label 的绘制位置、
+   不参与布局，所以这里只把它再往上抬 4px：数值位置、控件高度、item 余量全都不动。
+   为什么不按「控件 62→70px + item 68→76px」做：本轮实测（390pt，真实 Ionic + app.css）
+   控件与 item 各 +8px 时 label↔数值 8.18→12.18（+4，符合预期），但数值↔下划线同时
+   13.69→17.69（+4，等于把上一轮刚压下去的间距又还回去）——数值在控件里居中，
+   控件变高会把它相对「控件底边」也往下推 4px；又因为 item 高度必须 ≥ 控件高度，
+   那 4px 无法靠 item 余量抵掉（数学上无解）。当前写法下两个间距的实测值是
+   label↔数值 8.18→12.18（+4.00），数值↔下划线 13.69→13.69（±0），名称输入框
+   10.69→10.69（±0），所有输入框/下拉框一致。
+   ion-input 内部是 light DOM，label 用 :deep() 命中；ion-select 的 label 在 shadow DOM 里，
+   用 Ionic 暴露的 ::part(label)。两边都加 !important：Ionic 的
+   .label-floating.sc-ion-input-md-h .label-text-wrapper 是运行时注入文档的，普通规则
+   在特异性/顺序上都可能被它压过。只在 .label-floating（已浮起）时生效，空值/未聚焦时
+   label 仍在数值位置（Ionic 的 translateY(100%) scale(1)）不受影响。 */
+ion-input.input-label-placement-floating.label-floating :deep(.label-text-wrapper),
+ion-select.select-label-placement-floating.label-floating::part(label) {
+  transform: translateY(calc(50% - 4px)) scale(0.75) !important;
 }
 
 .editor-section h3 { margin: 17px 0 8px; color: #344d60; font-size: 13px; }
 .field-grid { display: grid; gap: 8px; }
 .two-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .field-grid ion-item { min-width: 0; --min-height: 68px; }
-.field-grid ion-input, .field-grid ion-select { min-width: 0; --padding-top: 6px; --padding-bottom: 4px; --padding-start: 0; --padding-end: 0; font-size: 13px; }
+/* 各网格不再各自设置内边距/字号：间距与字号统一由上面的浮动标签规则给出，
+   否则每日油耗、航速等分组会比别处更小（用户反馈的问题根因）。 */
+.field-grid ion-input, .field-grid ion-select { min-width: 0; }
 .field-tip, .section-note { align-self: center; color: #748697; font-size: 12px; line-height: 1.45; }
 
 /* ===== 与小程序对齐的排版（预算编辑页面 1.4.1 / 1.4.2 / 1.4.3） ===== */
@@ -1123,8 +1162,8 @@ ion-select.select-label-placement-floating {
 .fuel-port-grid { margin-top: 4px; }
 .speed-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .speed-grid ion-item { --min-height: 68px; }
-/* 4 个航速输入：label 比原来（11px）大一号，仍保持不换行 */
-.speed-grid ion-input :deep(.label-text-wrapper) { font-size: 13px; letter-spacing: -0.2px; white-space: nowrap; }
+/* 4 个航速输入不再单独缩小 label：统一 17px（Ionic 的 .label-text 自带 nowrap + 省略号），
+   原先这里的 13px 覆盖正是「航速那一块 label 比别处小」的原因。 */
 
 /* 港序：空态整宽主按钮；航段面板；到离港时间；航程与油耗汇总
    （参考小程序 BudgetPortSequencePanel.vue） */
@@ -1238,6 +1277,9 @@ ion-select.select-label-placement-floating {
 .modal-content ion-list ion-input, .modal-content ion-list ion-select,
 .modal-content .field-grid ion-input, .modal-content .field-grid ion-select { --padding-start: 0; --padding-end: 0; }
 .modal-content h3 { margin: 14px 0 8px; color: #344d60; font-size: 13px; }
+/* 模板管理弹层里的 4 个航速：换成统一 17px 后，4 列 + 弹层 12px 内缩只剩约 70px 可用宽度，
+   放不下 Ballast(Full)/Ballast(Eco)（约 85px），会被省略号截断，所以改为两列。 */
+.modal-content .speed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .modal-list { margin: 0; }
 .modal-grid { margin-top: 10px; }
 .three-column { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1248,6 +1290,8 @@ ion-select.select-label-placement-floating {
 .search-field { width: 100%; height: 56px; margin-top: 10px; --min-height: 56px; --background: #fff; --border-radius: 8px; --padding-start: 12px; --inner-padding-end: 4px; --inner-border-width: 0; border: 1px solid #d6e2ef; border-radius: 8px; }
 .search-field svg { flex: none; color: #1d4b7f; }
 .search-field ion-input { min-width: 0; --padding-top: 0; --padding-bottom: 0; --padding-start: 8px; --padding-end: 4px; }
+/* 搜索框没有浮动 label，不走上一条统一规则，但字号与页面其它输入框保持一致 */
+.search-field ion-input, .search-field ion-input :deep(input) { font-size: 17px !important; }
 .search-clear { display: grid; flex: none; width: 26px; height: 26px; margin-right: 4px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: #eef3f8; color: #64748b; }
 .port-results { margin-top: 10px; border-top: 1px solid #edf1f5; }
 

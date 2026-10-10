@@ -6,7 +6,7 @@ export default {
   },
   // 港口搜索
   search: {
-    portPlaceholder: '输入港口名称',
+    portPlaceholder: '搜索港口',
     noSuggestions: '暂无建议',
   },
   // 最近输入港口

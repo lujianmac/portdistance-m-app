@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'マイページ',
+    defaultName: 'PortDistance ユーザー',
+    emailFallback: 'メールアドレス未取得',
+    account: 'ニックネームの変更',
+    email: 'メールアドレスの変更',
+    password: 'パスワードの変更',
+    ships: '船舶要目',
+    language: '言語',
+    purchases: '購入履歴',
+    contact: 'お問い合わせ',
+    share: 'アプリを共有',
+    version: 'バージョン',
+    logout: 'ログアウト',
+    logoutMessage: '現在のアカウントからログアウトしてもよろしいですか？',
+    logoutConfirm: 'ログアウト',
+    shareText: 'PortDistance 航程計算・航海採算ツール',
+  },
+  // Account information
+  account: {
+    title: 'ニックネームの変更',
+    nameLabel: 'ニックネーム',
+    namePlaceholder: 'ニックネームを入力',
+    emailLabel: 'アカウントのメールアドレス',
+    save: 'ニックネームを保存',
+    saved: 'ニックネームを更新しました',
+  },
+  // Change email
+  email: {
+    title: 'メールアドレスの変更',
+    newEmailLabel: '新しいメールアドレス',
+    newEmailPlaceholder: '新しいメールアドレスを入力',
+    codeLabel: 'メール認証コード',
+    codePlaceholder: '認証コードを入力',
+    sendCode: 'コードを送信',
+    codeSent: '認証コードを送信しました',
+    sendCodeFailed: 'メールの送信に失敗しました',
+    save: 'メールアドレスを保存',
+    saved: 'メールアドレスを更新しました',
+    saveFailed: 'メールアドレスの更新に失敗しました',
+  },
+  // Change password
+  password: {
+    title: 'パスワードの変更',
+    oldLabel: '現在のパスワード',
+    oldPlaceholder: '現在のパスワードを入力',
+    newLabel: '新しいパスワード',
+    newPlaceholder: '6〜16文字',
+    save: '新しいパスワードを保存',
+    updated: 'パスワードを更新しました',
+  },
+  // Contact us
+  contact: {
+    title: 'お問い合わせ',
+    service: 'カスタマーサポート',
+    support: 'テクニカルサポート',
+    supportDescription: '航程データや地図の使用方法、技術的なご質問はテクニカルサポートまでお問い合わせください。',
+    wechat: 'WeChat',
+    email: 'メールアドレス',
+  },
+  // Purchase records
+  purchases: {
+    title: '購入履歴',
+    refresh: '購入履歴を更新',
+    loadFailed: '購入履歴の読み込みに失敗しました',
+    currentSubscription: '現在のサブスクリプション',
+    validity: '有効期間',
+    dateRange: '{start} 〜 {end}',
+    defaultPlan: 'PortDistance サービス利用契約',
+    noActiveSubscription: '有効なサブスクリプションはありません',
+    paymentRecords: '支払い履歴',
+    empty: '購入履歴はありません',
+    orderNo: '注文番号 {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: '支払い',
+    notRecorded: '記録なし',
+  },
+}

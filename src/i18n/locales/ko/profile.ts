@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: '내 정보',
+    defaultName: 'PortDistance 사용자',
+    emailFallback: '이메일을 불러오지 못했습니다',
+    account: '닉네임 변경',
+    email: '이메일 변경',
+    password: '비밀번호 변경',
+    ships: '선박 제원',
+    language: '언어',
+    purchases: '구매 내역',
+    contact: '문의하기',
+    share: '앱 공유하기',
+    version: '버전',
+    logout: '로그아웃',
+    logoutMessage: '현재 계정에서 로그아웃하시겠습니까?',
+    logoutConfirm: '로그아웃',
+    shareText: 'PortDistance 항해 거리 계산 및 항차 예산 산출 도구',
+  },
+  // Account information
+  account: {
+    title: '닉네임 변경',
+    nameLabel: '닉네임',
+    namePlaceholder: '닉네임을 입력하세요',
+    emailLabel: '계정 이메일',
+    save: '닉네임 저장',
+    saved: '닉네임이 변경되었습니다',
+  },
+  // Change email
+  email: {
+    title: '이메일 변경',
+    newEmailLabel: '새 이메일 주소',
+    newEmailPlaceholder: '새 이메일 주소를 입력하세요',
+    codeLabel: '이메일 인증번호',
+    codePlaceholder: '인증번호를 입력하세요',
+    sendCode: '인증번호 받기',
+    codeSent: '인증번호를 전송했습니다',
+    sendCodeFailed: '인증번호 전송에 실패했습니다',
+    save: '이메일 저장',
+    saved: '이메일이 변경되었습니다',
+    saveFailed: '이메일 변경에 실패했습니다',
+  },
+  // Change password
+  password: {
+    title: '비밀번호 변경',
+    oldLabel: '현재 비밀번호',
+    oldPlaceholder: '현재 비밀번호를 입력하세요',
+    newLabel: '새 비밀번호',
+    newPlaceholder: '6~16자',
+    save: '새 비밀번호 저장',
+    updated: '비밀번호가 변경되었습니다',
+  },
+  // Contact us
+  contact: {
+    title: '문의하기',
+    service: '고객센터',
+    support: '기술 지원',
+    supportDescription: '항해 거리 데이터와 지도 사용, 기술 관련 문의는 기술 지원으로 연락해 주세요.',
+    wechat: 'WeChat',
+    email: '이메일',
+  },
+  // Purchase records
+  purchases: {
+    title: '구매 내역',
+    refresh: '구매 내역 새로 고침',
+    loadFailed: '구매 내역을 불러오지 못했습니다',
+    currentSubscription: '현재 구독',
+    validity: '유효 기간',
+    dateRange: '{start} ~ {end}',
+    defaultPlan: 'PortDistance 서비스 구독',
+    noActiveSubscription: '유효한 구독이 없습니다',
+    paymentRecords: '결제 내역',
+    empty: '구매 내역이 없습니다',
+    orderNo: '주문번호 {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: '결제',
+    notRecorded: '기록 없음',
+  },
+}

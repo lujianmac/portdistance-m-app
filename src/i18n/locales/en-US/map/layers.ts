@@ -171,5 +171,16 @@ export default {
     areaLabel: 'Area {nm} nm² / {km} km²',
     turnPointTitle: 'Turn point',
     trackHoverDistance: 'Distance: {value} nm',
+    // Pin tool
+    pinTool: 'Drop a pin',
+    pinPlacingHint: 'Tap the map to drop pins; tap the pin button again to finish',
+    pinInfoTitle: 'Pin information',
+    pinCoordinate: 'Coordinates',
+    pinAddToPorts: 'Add to port list',
+    pinAddToPortsDisabled: 'A voyage result exists, so it cannot be added to the port list',
+    pinAlreadyAdded: 'This pin is already in the port list',
+    pinAddedNotice: 'Added to the port list',
+    clearPins: 'Clear all pins',
+    pinClearKeptPorts: 'All pins cleared; ports added from pins were kept because a voyage result exists',
   },
 }

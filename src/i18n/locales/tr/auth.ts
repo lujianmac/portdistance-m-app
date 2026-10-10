@@ -1,0 +1,53 @@
+// Login / register / forgot password
+export default {
+  // Login page
+  login: {
+    title: 'Giriş yap',
+    subtitle: 'Seyir planlamaya ve sefer tahminlerine devam etmek için giriş yapın.',
+    email: 'E-posta',
+    emailPlaceholder: 'E-posta adresinizi girin',
+    password: 'Şifre',
+    passwordPlaceholder: 'Şifrenizi girin',
+    togglePassword: 'Şifre görünürlüğünü değiştir',
+    submit: 'Giriş yap',
+    forgotPassword: 'Şifrenizi mi unuttunuz?',
+    register: 'Hesap oluştur',
+    failed: 'Giriş başarısız, lütfen daha sonra tekrar deneyin',
+  },
+  // Register page
+  register: {
+    title: 'Kayıt ol',
+    email: 'E-posta',
+    emailPlaceholder: 'E-posta adresinizi girin',
+    nickname: 'Takma ad (isteğe bağlı)',
+    nicknamePlaceholder: 'Takma adınızı girin',
+    code: 'E-posta doğrulama kodu',
+    codePlaceholder: 'Doğrulama kodunu girin',
+    sendCode: 'Kod gönder',
+    password: 'Şifre',
+    passwordPlaceholder: '6–16 karakter',
+    submit: 'Kayıt ol ve giriş yap',
+    termsPrefix: 'Kayıt olarak',
+    termsLink: 'Kullanım Koşulları',
+    termsConjunction: 've',
+    privacyLink: 'Gizlilik Politikası',
+    termsSuffix: '\'nı kabul etmiş olursunuz.',
+    haveAccount: 'Hesabınız var mı? Giriş yapın',
+    sendCodeFailed: 'E-posta gönderilemedi',
+    failed: 'Kayıt başarısız',
+  },
+  // Forgot password page
+  forgotPassword: {
+    title: 'Şifre sıfırlama',
+    email: 'Giriş e-postası',
+    emailPlaceholder: 'E-posta adresinizi girin',
+    code: 'E-posta doğrulama kodu',
+    codePlaceholder: 'Doğrulama kodunu girin',
+    sendCode: 'Kod gönder',
+    password: 'Yeni şifre',
+    passwordPlaceholder: '6–16 karakter',
+    submit: 'Şifreyi sıfırla',
+    sendCodeFailed: 'E-posta gönderilemedi',
+    failed: 'Şifre sıfırlanamadı',
+  },
+}

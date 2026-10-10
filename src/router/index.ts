@@ -140,6 +140,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/ships/view',
+    name: 'ship-view',
+    component: () => import('@/modules/ships/pages/ShipDetailPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/ships/editor',
     name: 'ship-editor',
     component: () => import('@/modules/ships/pages/ShipEditorPage.vue'),

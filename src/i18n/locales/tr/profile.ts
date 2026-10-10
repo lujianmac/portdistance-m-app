@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'Hesabım',
+    defaultName: 'PortDistance Kullanıcısı',
+    emailFallback: 'E-posta yüklenemedi',
+    account: 'Takma adı değiştir',
+    email: 'E-postayı değiştir',
+    password: 'Şifreyi değiştir',
+    ships: 'Gemi özellikleri',
+    language: 'Dil',
+    purchases: 'Satın alma geçmişi',
+    contact: 'Bize ulaşın',
+    share: 'Uygulamayı paylaş',
+    version: 'Sürüm',
+    logout: 'Çıkış yap',
+    logoutMessage: 'Mevcut hesaptan çıkmak istediğinizden emin misiniz?',
+    logoutConfirm: 'Çıkış yap',
+    shareText: 'PortDistance seyir hesaplama ve sefer tahmini aracı',
+  },
+  // Account information
+  account: {
+    title: 'Takma adı değiştir',
+    nameLabel: 'Takma ad',
+    namePlaceholder: 'Takma adınızı girin',
+    emailLabel: 'Hesap e-postası',
+    save: 'Takma adı kaydet',
+    saved: 'Takma ad güncellendi',
+  },
+  // Change email
+  email: {
+    title: 'E-postayı değiştir',
+    newEmailLabel: 'Yeni e-posta adresi',
+    newEmailPlaceholder: 'Yeni e-posta adresinizi girin',
+    codeLabel: 'E-posta doğrulama kodu',
+    codePlaceholder: 'Doğrulama kodunu girin',
+    sendCode: 'Kod gönder',
+    codeSent: 'Doğrulama kodu gönderildi',
+    sendCodeFailed: 'E-posta gönderilemedi',
+    save: 'E-postayı kaydet',
+    saved: 'E-posta güncellendi',
+    saveFailed: 'E-posta güncellenemedi',
+  },
+  // Change password
+  password: {
+    title: 'Şifreyi değiştir',
+    oldLabel: 'Mevcut şifre',
+    oldPlaceholder: 'Mevcut şifrenizi girin',
+    newLabel: 'Yeni şifre',
+    newPlaceholder: '6–16 karakter',
+    save: 'Yeni şifreyi kaydet',
+    updated: 'Şifre güncellendi',
+  },
+  // Contact us
+  contact: {
+    title: 'Bize ulaşın',
+    service: 'Müşteri hizmetleri',
+    support: 'Teknik destek',
+    supportDescription: 'Seyir verileri, harita kullanımı ve teknik sorularınız için lütfen teknik destek ekibiyle iletişime geçin.',
+    wechat: 'WeChat',
+    email: 'E-posta',
+  },
+  // Purchase records
+  purchases: {
+    title: 'Satın alma geçmişi',
+    refresh: 'Satın alma geçmişini yenile',
+    loadFailed: 'Satın alma geçmişi yüklenemedi',
+    currentSubscription: 'Mevcut abonelik',
+    validity: 'Geçerlilik tarihi',
+    dateRange: '{start} – {end}',
+    defaultPlan: 'PortDistance servis aboneliği',
+    noActiveSubscription: 'Aktif abonelik yok',
+    paymentRecords: 'Ödeme kayıtları',
+    empty: 'Satın alma kaydı yok',
+    orderNo: 'Sipariş {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: 'Ödeme',
+    notRecorded: 'Kaydedilmedi',
+  },
+}

@@ -8,6 +8,8 @@ export default {
   refreshAria: '刷新航次预算',
   guideTitle: '航次预算功能介绍',
   legacyHistoryAria: '旧版预算历史',
+  // 与「我的 - 船舶规范」入口同一措辞（profile.tab.ships）
+  shipsAria: '船舶规范',
   // 列表状态
   loading: '正在加载预算...',
   noMore: '没有更多预算了',

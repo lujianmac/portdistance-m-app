@@ -17,7 +17,7 @@
             <div v-if="activeSubscription" class="subscription-summary">
               <small>{{ t('profile.purchases.validity') }}</small>
               <strong>{{ t('profile.purchases.dateRange', { start: dateText(activeSubscription.subStartDate), end: dateText(activeSubscription.subEndDate) }) }}</strong>
-              <ion-note>{{ activeSubscription.subPeriod || activeSubscription.remark || t('profile.purchases.defaultPlan') }}</ion-note>
+              <ion-note v-if="subscriptionNote">{{ subscriptionNote }}</ion-note>
             </div>
             <div v-else class="empty-copy">{{ t('profile.purchases.noActiveSubscription') }}</div>
           </ion-card-content>
@@ -27,7 +27,7 @@
           <ion-list lines="full">
             <ion-item v-if="!records.length"><ion-label color="medium">{{ t('profile.purchases.empty') }}</ion-label></ion-item>
             <ion-item v-for="record in records" :key="String(record.orderNo || record.no || record.id)">
-              <ion-label><strong>{{ t('profile.purchases.orderNo', { no: record.orderNo || record.no || record.id || '-' }) }}</strong><p>{{ channelName(record.channelId) }} · {{ dateTimeText(record.createTime) }}</p></ion-label>
+              <ion-label><span class="order-no">{{ t('profile.purchases.orderNo', { no: record.orderNo || record.no || record.id || '-' }) }}</span><p>{{ channelName(record.channelId) }} · {{ dateTimeText(record.createTime) }}</p></ion-label>
               <ion-note slot="end">{{ amount(record.amount) }} {{ String(record.currency || 'CNY').toUpperCase() }}</ion-note>
             </ion-item>
           </ion-list>
@@ -55,6 +55,18 @@ const activeSubscription = computed(() => subscriptions.value.find((item) => {
   const end = toDate(item.subEndDate)
   return end && end.getTime() >= Date.now()
 }) || subscriptions.value[0])
+
+/**
+ * 当前订阅的第三行说明。服务端 subPeriod 是订阅周期（月数），经常就是裸数字 1，
+ * 直接渲染出来就是用户看到的那个「1」；remark 也可能是空白。
+ * 只有取值是有意义的、非纯数字的文本（例如「年度会员」）时才渲染这一行，
+ * 否则整行不输出——不回退到 defaultPlan 这类占位文案（该 key 保留在消息文件里备用）。
+ */
+const subscriptionNote = computed(() => {
+  const value = activeSubscription.value?.subPeriod || activeSubscription.value?.remark || ''
+  const text = String(value).trim()
+  return text && !/^\d+(\.\d+)?$/.test(text) ? text : ''
+})
 
 onIonViewWillEnter(() => { void load() })
 
@@ -104,5 +116,10 @@ function channelName(channelId?: number) {
 </script>
 
 <style scoped>
-.subscription-summary { display: grid; gap: 6px; }.subscription-summary small { color: #718294; font-size: 12px; }.subscription-summary strong { color: #173447; font-size: 16px; }.subscription-summary ion-note { font-size: 13px; }.empty-copy { color: #718294; font-size: 14px; }.page-card ion-item p { margin: 4px 0 0; color: #65778a; font-size: 12px; }.page-card ion-note { max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subscription-summary { display: grid; gap: 6px; }.subscription-summary small { color: #718294; font-size: 12px; }.subscription-summary strong { color: #173447; font-size: 16px; }.subscription-summary ion-note { font-size: 13px; }
+/* 订单编号：原来是 <strong>（normalize 里 strong 为 bold，字号继承 16px），
+   现在改成普通 span —— 不加粗，字号在 16px 基础上小 1px = 15px；
+   下面「渠道 · 时间」那行 p 保持原样。 */
+.page-card .order-no { font-weight: 400; font-size: 15px; }
+.empty-copy { color: #718294; font-size: 14px; }.page-card ion-item p { margin: 4px 0 0; color: #65778a; font-size: 12px; }.page-card ion-note { max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

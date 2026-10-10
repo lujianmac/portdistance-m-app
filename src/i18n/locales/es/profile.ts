@@ -1,0 +1,82 @@
+// "Me" tab and its sub-pages: account / email / password / contact / purchase records
+export default {
+  // Me
+  tab: {
+    title: 'Perfil',
+    defaultName: 'Usuario de PortDistance',
+    emailFallback: 'Correo electrónico no cargado',
+    account: 'Editar nombre de usuario',
+    email: 'Cambiar correo electrónico',
+    password: 'Cambiar contraseña',
+    ships: 'Especificaciones del buque',
+    language: 'Idioma',
+    purchases: 'Historial de compras',
+    contact: 'Contáctanos',
+    share: 'Compartir la aplicación',
+    version: 'Versión',
+    logout: 'Cerrar sesión',
+    logoutMessage: '¿Seguro que deseas cerrar la sesión de la cuenta actual?',
+    logoutConfirm: 'Cerrar sesión',
+    shareText: 'PortDistance: calculadora de distancias y estimación de viajes',
+  },
+  // Account information
+  account: {
+    title: 'Editar nombre de usuario',
+    nameLabel: 'Nombre de usuario',
+    namePlaceholder: 'Introduce tu nombre de usuario',
+    emailLabel: 'Correo de la cuenta',
+    save: 'Guardar nombre de usuario',
+    saved: 'Nombre de usuario actualizado',
+  },
+  // Change email
+  email: {
+    title: 'Cambiar correo electrónico',
+    newEmailLabel: 'Nuevo correo electrónico',
+    newEmailPlaceholder: 'Introduce el nuevo correo electrónico',
+    codeLabel: 'Código de verificación por correo',
+    codePlaceholder: 'Introduce el código de verificación',
+    sendCode: 'Enviar código',
+    codeSent: 'Código de verificación enviado',
+    sendCodeFailed: 'No se pudo enviar el correo',
+    save: 'Guardar correo electrónico',
+    saved: 'Correo electrónico actualizado',
+    saveFailed: 'No se pudo actualizar el correo electrónico',
+  },
+  // Change password
+  password: {
+    title: 'Cambiar contraseña',
+    oldLabel: 'Contraseña actual',
+    oldPlaceholder: 'Introduce la contraseña actual',
+    newLabel: 'Nueva contraseña',
+    newPlaceholder: 'De 6 a 16 caracteres',
+    save: 'Guardar nueva contraseña',
+    updated: 'Contraseña actualizada',
+  },
+  // Contact us
+  contact: {
+    title: 'Contáctanos',
+    service: 'Atención al cliente',
+    support: 'Soporte técnico',
+    supportDescription: 'Para consultas sobre datos de travesías, uso del mapa y temas técnicos, contacta con soporte técnico.',
+    wechat: 'WeChat',
+    email: 'Correo electrónico',
+  },
+  // Purchase records
+  purchases: {
+    title: 'Historial de compras',
+    refresh: 'Actualizar historial de compras',
+    loadFailed: 'No se pudo cargar el historial de compras',
+    currentSubscription: 'Suscripción actual',
+    validity: 'Vigencia',
+    dateRange: '{start} a {end}',
+    defaultPlan: 'Suscripción al servicio PortDistance',
+    noActiveSubscription: 'Sin suscripción activa',
+    paymentRecords: 'Registros de pago',
+    empty: 'No hay registros de compra',
+    orderNo: 'Pedido {no}',
+    alipay: 'Alipay',
+    wechatPay: 'WeChat Pay',
+    payment: 'Pago',
+    notRecorded: 'Sin registrar',
+  },
+}
