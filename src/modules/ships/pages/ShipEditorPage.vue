@@ -54,7 +54,7 @@
           <ion-card-header><h2 class="page-card-title">{{ t('ships.other') }}</h2></ion-card-header>
           <ion-list lines="full">
             <ion-item v-for="field in otherTextFields" :key="field.name">
-              <ion-input :value="form[field.name] || ''" :label="field.label" label-placement="start" type="text" enterkeyhint="next" @ion-input="updateText(field.name, $event)" />
+              <ion-input :value="form[field.name] || ''" :label="field.label" label-placement="start" type="text" enterkeyhint="done" @ion-input="updateText(field.name, $event)" />
             </ion-item>
             <ion-item v-for="field in otherNumberFields" :key="field.name">
               <ion-input :value="numberDraft[field.name] || ''" :label="field.label" label-placement="start" type="number" inputmode="decimal" enterkeyhint="next" :maxlength="10" @ion-input="updateNumber(field.name, $event)">
@@ -556,5 +556,14 @@ async function load() {
   border-radius: 50%;
   background: #eef2f6;
   color: #526879;
+}
+
+/*
+ * 列表最后一行的下划线去掉：卡片底部不需要分隔线。
+ * `lines="full"` 是 Ionic 通过 :host(.item-lines-full) 写在 item 上的
+ * `--border-width: 0 0 0.55px 0`，这里在最后一项上覆盖为 0 即可（作用域选择器特异性更高）。
+ */
+ion-list > ion-item:last-of-type {
+  --border-width: 0;
 }
 </style>

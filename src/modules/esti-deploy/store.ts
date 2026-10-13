@@ -529,6 +529,10 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
   const document = ref<VoyageBudgetDocument>(createEmptyVoyageBudgetDocument())
   const localDrafts = ref<VoyageBudgetLocalDraftMeta[]>([])
   const currentLocalDraftId = ref<string | null>(null)
+  // 详情来源标记（只增不改，列表页逻辑不读它）：document 当前对应哪个预算的服务端详情。
+  // applyDetail 写入、resetDraft / loadLocalDraft 清空，详情页据此判断「store 已持有该预算」以跳过重复查询。
+  const detailLoadedId = ref<number | null>(null)
+  const detailLoadedAt = ref(0)
   const userScopeId = ref('anonymous')
   let searchRequestVersion = 0
 
@@ -606,6 +610,9 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
     document.value = createEmptyVoyageBudgetDocument()
     portSuggestions.value = []
     currentLocalDraftId.value = null
+    // store 不再持有任何服务端详情，详情页必须重新查询。
+    detailLoadedId.value = null
+    detailLoadedAt.value = 0
   }
 
   function recalculate() {
@@ -998,6 +1005,9 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
       document.value = createEmptyVoyageBudgetDocument()
     }
     currentLocalDraftId.value = null
+    // 记录「当前 document 来自哪个 id 的服务端详情」，供详情页判断能否跳过重复查询。
+    detailLoadedId.value = currentId.value
+    detailLoadedAt.value = Date.now()
   }
 
   async function loadDetail(id: number) {
@@ -1127,6 +1137,9 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
     deployDesc.value = String(draft.deployDesc || '')
     document.value = normalizeDocument(contentPayload(draft.document))
     currentLocalDraftId.value = id
+    // document 已换成本地草稿内容，不再等同于该 id 的服务端详情，详情页需要重新查询。
+    detailLoadedId.value = null
+    detailLoadedAt.value = 0
   }
 
   async function clearSavedLocalDraft(id = currentLocalDraftId.value) {
@@ -1161,6 +1174,8 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
     document,
     localDrafts,
     currentLocalDraftId,
+    detailLoadedId,
+    detailLoadedAt,
     canCalculateRoute,
     hasCalculatedRoute,
     routeSummary,

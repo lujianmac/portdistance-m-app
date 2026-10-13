@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "Vue.volar",
-    "Webnative.webnative"
+    "Webnative.webnative",
+    "vscjava.vscode-gradle"
   ]
 }

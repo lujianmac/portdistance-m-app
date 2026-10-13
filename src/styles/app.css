@@ -38,6 +38,37 @@ ion-header ion-toolbar {
   --border-color: #dce5eb;
 }
 
+/* Android（md）页面头部扁平化，与 iOS 观感一致：Ionic 在 md 下给页面工具栏
+   --min-height: 56px，又给 .header-md 加了 Material 立体阴影（0 2px 4px -1px …），
+   ion-title 也是 20px/500、左对齐、左右各 20px 内边距；本应用 iOS 的观感是 44px
+   扁平栏 + 自带的 1px 下边框。
+   选择器只认「路由页面」的 div.ion-page：弹窗/浮层的 delegate host 也是
+   div.ion-page，但它额外带 .ion-delegate-host，必须排除，这样 ion-modal 的弹窗头部
+   （如 .share-dialog-header，--min-height: 52px）保持原样；底部操作栏
+   .detail-action-bar（ion-footer，--min-height: 46px）也不在 ion-header 里，同样不受影响。
+   安全区仍由 Ionic 的 ion-header ion-toolbar:first-of-type { padding-top: var(--ion-safe-area-top) }
+   提供，这里只改工具栏容器的变量，不碰宿主元素的 padding。 */
+html.md .ion-page:not(.ion-delegate-host) > ion-header.header-md,
+html.md .ion-page:not(.ion-delegate-host) > ion-header.header-md > ion-toolbar {
+  box-shadow: none;
+}
+
+html.md .ion-page:not(.ion-delegate-host) > ion-header > ion-toolbar {
+  --min-height: 44px;
+}
+
+html.md .ion-page:not(.ion-delegate-host) > ion-header > ion-toolbar > ion-title {
+  /* md 默认 font-size: 1.25rem / font-weight: 500 / padding-inline: 20px 且左对齐。
+     这里不能照搬 iOS 的 90px 内边距：iOS 的 ion-title 是绝对定位、铺满整条工具栏，
+     而 md 下它仍在文档流里、只占两侧按钮之间的剩余宽度，照搬会把带按钮/徽标的
+     标题裁掉；改成居中 + 收窄内边距，长标题也只是按 md 自己的省略号规则截断。 */
+  padding-inline: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: center;
+}
+
 ion-tab-bar {
   /* Icon (22px) + label (13px) + the safe area need a little more room. */
   --height: 62px;
@@ -245,12 +276,12 @@ ion-toast::part(wrapper) {
 
 .tz-select-popover ion-item {
   --min-height: 40px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tz-select-popover ion-label {
   overflow: visible;
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: clip;
   white-space: nowrap;
 }

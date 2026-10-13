@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { useMapStore } from '@/stores/map'
 import type { PortInfo } from '@/types'
 import { portDisplayName } from '@/utils/port'
+import { mergePortSuggestions, portQueryVariants } from '@/utils/port-search'
 import { DEFAULT_EXCLUDED_ROUTE_POINT_IDS } from '@/utils/route'
 import type { LocalRouteGeometry } from '@/utils/route'
 import { appStorage } from '@/utils/storage'
@@ -44,10 +45,6 @@ function resetDistance(row: DistanceRow): DistanceRow {
  * 因此只把发给接口的查询归一化：去掉全部空白（含全角空格与 NBSP）和撇号后转小写，
  * 让 `da l` / `da'l` / `DA L` 都按 `dal` 查询。输入框里显示的内容不受影响。
  */
-function normalizePortQuery(keyword: string) {
-  return keyword.replace(/[\s\u3000\u00a0'’`]/g, '').toLowerCase()
-}
-
 function rowFor(port: PortInfo): DistanceRow {
   return {
     port: {
@@ -244,18 +241,22 @@ export const useDistanceStore = defineStore('distance', () => {
 
   async function searchPorts(keyword: string) {
     const requestVersion = ++searchRequestVersion
-    // 只归一化发给接口的查询；输入框仍显示用户原始输入（含输入法分隔符）
-    const query = normalizePortQuery(keyword)
-    if (!query) {
+    // 输入框仍显示用户原始输入；发给接口的查询见 utils/port-search：
+    // 先原样串（保留用户主动打的空格，"dalia f" → Dalia FPSO），再归一化串兜底（宽容误打空格）。
+    const queries = portQueryVariants(keyword)
+    if (!queries.length) {
       if (requestVersion === searchRequestVersion) suggestPorts.value = []
       return
     }
     searching.value = true
     try {
-      const result = await getSuggestPortList(query)
-      if (requestVersion === searchRequestVersion) {
-        suggestPorts.value = Array.isArray(result) ? result : []
+      let merged: PortInfo[] = []
+      for (const query of queries) {
+        const result = await getSuggestPortList(query)
+        if (requestVersion !== searchRequestVersion) return
+        merged = mergePortSuggestions(merged, Array.isArray(result) ? result : [])
       }
+      suggestPorts.value = merged
     } catch {
       if (requestVersion === searchRequestVersion) suggestPorts.value = []
     } finally {

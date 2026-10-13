@@ -2,7 +2,8 @@
   "images" : [
     {
       "filename" : "splash1320×2868.png",
-      "idiom" : "iphone"
+      "idiom" : "iphone",
+      "locale" : "zh-Hans"
     },
     {
       "filename" : "1320_en 1.png",

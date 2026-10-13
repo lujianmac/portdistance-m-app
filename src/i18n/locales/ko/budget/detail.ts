@@ -38,9 +38,9 @@ export default {
   fuelSpeedNote: 'Daily fuel consumption: t/day · Speed: knots',
   ladenMainEngine: 'Main(Laden)',
   ballastMainEngine: 'Main(Ballast)',
-  seaAuxiliary: 'Sub',
-  idleInPort: 'Port Idle',
-  workingInPort: 'Port Work',
+  seaAuxiliary: 'Sub(LSDO/MGO)',
+  idleInPort: 'Idle(LSDO/MGO)',
+  workingInPort: 'Work(LSDO/MGO)',
   ballastFullSpeed: 'Ballast(Full)',
   ballastEcoSpeed: 'Ballast(Eco)',
   ladenFullSpeed: 'Laden(Full)',
@@ -104,9 +104,6 @@ export default {
   fuelCost: 'Fuel cost',
   mainFuelCost: '{type} cost',
   mgoFuelCost: 'LSDO/MGO cost',
-  mainFuelCostFormula: '{type} cost = {fuel} t × {price}',
-  mgoFuelCostFormula: 'ECA, auxiliary and in-port fuel × {price}',
-  totalFuelCost: 'Total fuel cost = {value}',
 
   // Expenses
   costTitle: 'Expenses',

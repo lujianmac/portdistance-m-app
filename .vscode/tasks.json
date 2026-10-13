@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Build Debug APK",
+      "type": "shell",
+      "command": "source \"$HOME/.zshrc\" && npm run cap:sync && cd android && ./gradlew :app:assembleDebug --console=plain",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Install and Launch on USB Device",
+      "type": "shell",
+      "command": "source \"$HOME/.zshrc\" && adb -d install -r \"${workspaceFolder}/android/app/build/outputs/apk/debug/app-debug.apk\" && adb -d shell monkey -p com.marinecircle.portdistance 1",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build, Install, and Launch (USB)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Android: Build Debug APK",
+        "Android: Install and Launch on USB Device"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

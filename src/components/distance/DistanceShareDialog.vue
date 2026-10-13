@@ -566,6 +566,17 @@ function handleDismiss() {
   --padding-bottom: 10px;
 }
 
+/*
+ * 标题栏的上下内边距必须对称：上面只给 --padding-bottom: 10px、--padding-top 默认 0，
+ * 工具栏容器把整行内容在「内容盒」里居中，内容盒被底部内边距顶高，标题和关闭按钮
+ * 就一起偏上 5px（实测两者中心 208.75 vs 工具栏中心 213.75），看起来没有垂直居中。
+ * 改成 5/5 后内容盒上下对称，52px 的标题栏高度不变，两个元素的中心与工具栏中心重合。
+ */
+.share-dialog-header ion-toolbar {
+  --padding-top: 5px;
+  --padding-bottom: 5px;
+}
+
 .share-dialog-header ion-title {
   color: #173447;
   font-size: 15px;

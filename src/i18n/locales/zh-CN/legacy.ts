@@ -113,7 +113,7 @@ export default {
     opOther: '其他费用',
     cev: '通讯娱乐伙补',
     portCharge: '港口使费',
-    foBallast: '空载',
+    foBallast: '压载',
     foLaden: '满载',
     foPortIdle: '待港',
     foPortWork: '作业',

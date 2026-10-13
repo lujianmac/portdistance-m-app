@@ -92,14 +92,32 @@ function text(value: string | number | null | undefined) {
   return value === null || value === undefined ? '' : String(value)
 }
 
-/** Zero stays visible (the legacy view printed it as-is); only empty values are blank. */
+/**
+ * Zero is not a value here: every numeric spec is optional and the editor stores 0 for an empty
+ * input (`ShipEditorPage`'s `emptyForm()` seeds 0s too), so printing 0 would read as "this vessel
+ * really has 0 holds / 0 decks" instead of "not filled in". Missing and 0 therefore share the
+ * localized `common.notSet` wording; real values keep the locale-aware number formatting.
+ */
 function numberText(value: number | string | null | undefined) {
-  if (value === null || value === undefined || value === '') return ''
+  if (value === null || value === undefined || value === '') return t('common.notSet')
+  const numeric = Number(value)
+  if (Number.isFinite(numeric) && numeric === 0) return t('common.notSet')
   return formatAmount(value)
 }
 
 function dateText(value: number | string | null | undefined) {
   return value ? formatDate(value, '') : ''
+}
+
+/**
+ * 建造年代单独处理：它是年份，不能走 `formatAmount`（否则 1998 会变成 "1,998"），
+ * 但未填写时同样是 0，需要和 `numberText` 一样显示为「未设置」。
+ */
+function yearText(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === '') return t('common.notSet')
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric === 0) return t('common.notSet')
+  return String(Math.trunc(numeric))
 }
 
 /**
@@ -121,7 +139,7 @@ const basicCells = computed<SpecCell[]>(() => {
     { label: t('ships.fields.shipName'), value: text(item.shipName) },
     { label: t('ships.fields.shipType'), value: vesselTypeName(item.shipType) },
     { label: t('ships.fields.flag'), value: text(item.flag) },
-    { label: t('ships.fields.buildYear'), value: text(item.buildYear) },
+    { label: t('ships.fields.buildYear'), value: yearText(item.buildYear) },
     { label: t('ships.fields.dwt'), value: numberText(item.dwt), unit: t('ships.units.mt') },
     { label: t('ships.fields.dwcc'), value: numberText(item.dwcc), unit: t('ships.units.mt') },
     { label: t('ships.fields.grt'), value: numberText(item.grt), unit: t('ships.units.mt') },

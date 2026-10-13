@@ -225,7 +225,7 @@
             </section>
 
             <section v-if="distance.hasDistanceResult" class="schedule-card" :aria-label="t('distance.schedule.ariaLabel')">
-              <div class="schedule-row">
+              <div class="schedule-row" :class="{ 'schedule-row-year': scheduleShowsYear }">
                 <div class="time-block">
                   <div class="time-line">
                     <strong class="time-value">{{ departureDisplay }}</strong>
@@ -243,22 +243,21 @@
 
                 <ArrowRight class="time-arrow" :size="12" aria-hidden="true" />
 
-                <div class="time-block">
+                <div class="time-block time-block-arrival">
                   <div class="time-line">
                     <strong class="time-value">{{ arrivalBaseDisplay }}</strong>
+                    <button
+                      class="time-action settings"
+                      :class="{ active: timeZonePanelOpen }"
+                      type="button"
+                      :aria-label="t('distance.schedule.timeZoneSettings')"
+                      @click="timeZonePanelOpen = !timeZonePanelOpen"
+                    >
+                      <Settings2 :size="16" />
+                    </button>
                   </div>
                   <small v-if="showArrivalZone" class="time-zone">{{ arrivalZoneDisplay }}</small>
                 </div>
-
-                <button
-                  class="time-action settings"
-                  :class="{ active: timeZonePanelOpen }"
-                  type="button"
-                  :aria-label="t('distance.schedule.timeZoneSettings')"
-                  @click="timeZonePanelOpen = !timeZonePanelOpen"
-                >
-                  <Settings2 :size="16" />
-                </button>
               </div>
 
               <div v-if="timeZonePanelOpen" class="timezone-settings">
@@ -531,7 +530,6 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DistanceShareDialog from '@/components/distance/DistanceShareDialog.vue'
-import { appRegion, defaultTimeZone as regionDefaultTimeZone } from '@/config/region'
 import { useDistanceStore, type RecentDistanceCalculation } from '@/stores/distance'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
 import { useMapStore } from '@/stores/map'
@@ -559,20 +557,22 @@ interface DateTimeParts {
 /**
  * Persisted departure time zone. Namespaced like `pd.app.locale` (see
  * `stores/locale.ts`) so the user's choice survives a restart.
+ * `.v2`：旧键里可能存着「设备时区取不到 + 英文(英国) 语言」那次兜底成的 Europe/London，
+ * 换了键就让它只保存用户真正选过的值（旧值忽略，重新选一次即可）。
  */
-const TIME_ZONE_STORAGE_KEY = 'pd.app.distance.departureTimeZone'
+const TIME_ZONE_STORAGE_KEY = 'pd.app.distance.departureTimeZone.v2'
 
 const timeZones = [
-  { value: 'UTC', label: 'UTC (GMT+0)' },
-  { value: 'Asia/Shanghai', label: 'China (GMT+8)' },
-  { value: 'Asia/Singapore', label: 'Singapore (GMT+8)' },
-  { value: 'Asia/Tokyo', label: 'Japan (GMT+9)' },
-  { value: 'Europe/London', label: 'UK (GMT+0)' },
-  { value: 'Europe/Paris', label: 'Europe (GMT+1)' },
-  { value: 'America/New_York', label: 'US East (GMT-5)' },
-  { value: 'America/Los_Angeles', label: 'US West (GMT-8)' },
-  { value: 'Australia/Sydney', label: 'Australia (GMT+10)' },
-  { value: 'Asia/Dubai', label: 'Dubai (GMT+4)' },
+  { value: 'UTC', name: 'UTC' },
+  { value: 'Asia/Shanghai', name: 'China' },
+  { value: 'Asia/Singapore', name: 'Singapore' },
+  { value: 'Asia/Tokyo', name: 'Japan' },
+  { value: 'Europe/London', name: 'UK' },
+  { value: 'Europe/Paris', name: 'Europe' },
+  { value: 'America/New_York', name: 'US East' },
+  { value: 'America/Los_Angeles', name: 'US West' },
+  { value: 'Australia/Sydney', name: 'Australia' },
+  { value: 'Asia/Dubai', name: 'Dubai' },
 ]
 
 /** `true` when `Intl` can format with `value`, i.e. it is a usable IANA time zone. */
@@ -602,13 +602,47 @@ function deviceTimeZone() {
   }
 }
 
+/** 某个时区此刻相对 UTC 的偏移（分钟）；Intl 不可用时退回固定偏移表。 */
+function zoneOffsetMinutes(timeZone: string) {
+  const fallback = fallbackTimeZoneOffsets[timeZone]
+  const parts = datePartsInZone(new Date(), timeZone)
+  const hour = parts.hour === '24' ? '00' : parts.hour
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(hour), Number(parts.minute))
+  if (!Number.isFinite(asUtc)) return typeof fallback === 'number' ? fallback * 60 : 0
+  return Math.round((asUtc - Date.now()) / 60_000)
+}
+
 /**
- * Base zone of the voyage times: device zone -> primary zone of the app region
- * -> `Asia/Shanghai`. Voyage times are typed and read in this zone; the pickers
- * only reformat the same instant, exactly like the mini program (`portdistance-mp`).
+ * 设备时区名取不到时，用设备当前的 UTC 偏移在候选时区里找同偏移的那个（找不到取最接近的）。
+ * 候选表里 Asia/Shanghai 与 Asia/Singapore 同为 +8，按列表顺序取到 Shanghai（与 region CN 的默认一致）；
+ * Europe/London 与 Europe/Paris 在夏令时同为 +1 时取到 London，都符合预期。
+ */
+function offsetMatchedTimeZone() {
+  const deviceOffset = -new Date().getTimezoneOffset()
+  let best = ''
+  let bestDelta = Number.POSITIVE_INFINITY
+  for (const zone of timeZones) {
+    const delta = Math.abs(zoneOffsetMinutes(zone.value) - deviceOffset)
+    if (delta === 0) return zone.value
+    if (delta < bestDelta) {
+      bestDelta = delta
+      best = zone.value
+    }
+  }
+  return best
+}
+
+/**
+ * Base zone of the voyage times: device zone -> the candidate zone that matches the
+ * device's *measured* UTC offset -> closest candidate.
+ *
+ * 真机上出现过 `Intl...resolvedOptions().timeZone` 取不到（返回空）的情况，此时原来退到
+ * 「区域默认时区」，而区域只由设备语言推断：北京时区 + 英文(英国) 语言的手机会被兜成
+ * Europe/London，日程直接显示 UK 时间（GMT+0/1）。设备的 UTC 偏移即使在没有 IANA 数据时
+ * 也能读到，是比语言区域强得多的信号，所以这里以偏移为准；区域默认只留给地图初始视野。
  */
 function resolveBaseTimeZone() {
-  return deviceTimeZone() || regionDefaultTimeZone(appRegion()) || 'Asia/Shanghai'
+  return deviceTimeZone() || offsetMatchedTimeZone() || 'Asia/Shanghai'
 }
 
 /** Fallback offsets keep the conversion working on WebViews without full time zone data. */
@@ -677,6 +711,8 @@ const dms = reactive({
 /**
  * 下拉项：固定列表 + 当前用到的列表外时区（设备时区等），
  * 否则 ion-select 会因为找不到匹配项而显示空白。
+ * 偏移一律按「此刻」实时计算，夏令时期间 UK 会显示 GMT+1、US East 显示 GMT-4，
+ * 不再写死成冬季的 GMT+0 / GMT-5。
  */
 const timeZoneOptions = computed(() => {
   const known = new Set(timeZones.map((timeZone) => timeZone.value))
@@ -684,7 +720,7 @@ const timeZoneOptions = computed(() => {
     .filter((value, index, list) => list.indexOf(value) === index && !known.has(value))
   return [
     ...extraValues.map((value) => ({ value, label: `${zoneShortName(value)} (${zoneOffsetLabel(value)})` })),
-    ...timeZones,
+    ...timeZones.map((timeZone) => ({ value: timeZone.value, label: `${timeZone.name} (${zoneOffsetLabel(timeZone.value)})` })),
   ]
 })
 
@@ -696,6 +732,17 @@ const showRecentPorts = computed(
 )
 const departureAt = computed(() => zonedDateTimeToUtc(departureDate.value, departureClock.value, baseTimeZone.value))
 const arrivalAt = computed(() => new Date(departureAt.value.getTime() + distance.sailingDays * 86_400_000))
+/**
+ * 年份按需显示：只有「离港/到港不在当前年份」或「离港与到港跨年」时才显示年份，
+ * 其余情况只显示「月/日 时:分」——两个半区等宽（见 .schedule-row），年份显示与否都不会挪动箭头。
+ * 注意：当前年份不是响应式依赖，跨年那一刻不会自行刷新，改一次离港时间即会重算。
+ */
+const scheduleShowsYear = computed(() => {
+  const currentYear = datePartsInZone(new Date(), baseTimeZone.value).year
+  const departureParts = datePartsInZone(departureAt.value, baseTimeZone.value)
+  const arrivalParts = datePartsInZone(arrivalAt.value, baseTimeZone.value)
+  return departureParts.year !== currentYear || arrivalParts.year !== currentYear || departureParts.year !== arrivalParts.year
+})
 const departurePickerValue = computed(() => `${departureDate.value}T${departureClock.value}:00`)
 const departureDisplay = computed(() => formatTimeInZone(departureAt.value, baseTimeZone.value))
 const arrivalBaseDisplay = computed(() => formatTimeInZone(arrivalAt.value, baseTimeZone.value))
@@ -1051,7 +1098,11 @@ function datePartsInZone(date: Date, timeZone: string): DateTimeParts {
 function formatTimeInZone(date: Date, timeZone: string) {
   const parts = datePartsInZone(date, timeZone)
   const hour = parts.hour === '24' ? '00' : parts.hour
-  return `${parts.year}/${parts.month}/${parts.day} ${hour}:${parts.minute}`
+  // 月/日与年份都取自 Intl 的分段结果（保持「各语言读数一致」的数字顺序），只按需省略年份
+  const day = scheduleShowsYear.value
+    ? `${parts.year}/${parts.month}/${parts.day}`
+    : `${parts.month}/${parts.day}`
+  return `${day} ${hour}:${parts.minute}`
 }
 
 function dateValueInZone(date: Date, timeZone: string) {
@@ -1365,6 +1416,8 @@ async function presentToast(message: string) {
   --padding-start: 30px;
   --padding-end: 30px;
   font-size: 16px;
+  /* md 下 ion-button 默认 500（实测就是 500），主操作按钮再粗一号到 600；字号不动 */
+  font-weight: 600;
 }
 
 .clear-result-button {
@@ -1544,12 +1597,13 @@ async function presentToast(message: string) {
 .schedule-row {
   display: grid;
   /*
-   * 离港列吃掉剩余宽度（日期 "2026/07/29 14:05" 在 15px 字号下实测约 119px，
-   * 加上按钮后强行走等宽分列会被省略号截断），到港列按内容宽度，箭头保持窄；
-   * 两个操作按钮（离港"设置时间"、到港"时区设置"）共用 --schedule-action-size，
-   * 因此左右宽度完全一致，包括各自所在的网格列。
+   * 两个半区等宽：离港「日期 + 设置时间按钮」与到港「日期 + 时区按钮」各占一个 1fr，
+   * 箭头居中且不参与分配，因此年份显示/隐藏时两半宽度都不变，箭头不会被推来推去；
+   * 半区内部的内容（日期 + 按钮、下方的时区小字）都在各自半区里水平居中（见 .time-line / .time-zone）。
+   * 每半区的内容是「日期 + 28px 按钮」，360px 宽的 md 屏上每半区约 146px，
+   * 因此年份按需显示（见 formatTimeInZone），常规航次只占 85px + 按钮。
    */
-  grid-template-columns: minmax(0, 1fr) auto auto var(--schedule-action-size);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 5px;
   --schedule-action-size: 28px;
@@ -1562,6 +1616,8 @@ async function presentToast(message: string) {
 .time-line {
   display: flex;
   align-items: center;
+  /* 日期 + 按钮作为一个整体在半区里水平居中（两侧留白相等） */
+  justify-content: center;
   gap: 4px;
 }
 
@@ -1571,8 +1627,22 @@ async function presentToast(message: string) {
   font-size: 15px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  /* 省略号只是最后兜底：正常显示（含跨年航次）由上面的列宽预算保证放得下 */
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * 带年份时完整日期宽 127px（15px 字号），比不带年份的 85px 多 42px。
+ * 一个半区的内容是「日期 + 28px 按钮 + 4px 间距」，15px 下需要 386px 以上的屏宽
+ * （390dp 半区 161px 刚好放得下 158.75px）；窄屏（≤389dp，含 360dp 的常见安卓屏，
+ * 每半区只有 146px、文字框 114px）把该行日期降一号到 13px：127 × 13/15 ≈ 110px，
+ * 仍留 4px 富余，因此带年份时也不会出现省略号，且行高由 28px 按钮决定、保持不变。
+ */
+@media (max-width: 389px) {
+  .schedule-row-year .time-value {
+    font-size: 13px;
+  }
 }
 
 .time-action {
@@ -1588,11 +1658,7 @@ async function presentToast(message: string) {
   color: #315c7b;
 }
 
-/* 时区按钮固定贴到该列右端，与离港侧的设置时间按钮保持同样的宽度 */
-.time-action.settings {
-  justify-self: end;
-}
-
+/* 时区按钮由 .time-block-arrival .time-line 的 flex-end 贴到行尾，这里不再需要单列对齐 */
 .time-action.settings.active {
   border-color: #005f88;
   background: #005f88;
@@ -1604,7 +1670,9 @@ async function presentToast(message: string) {
   margin-top: 3px;
   overflow: hidden;
   color: #718293;
-  font-size: 11px;
+  /* 11 → 12px（时区小字大一号），并与所在半区的日期行一起水平居中 */
+  font-size: 12px;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

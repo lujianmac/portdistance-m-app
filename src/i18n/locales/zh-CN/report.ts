@@ -45,12 +45,12 @@ export default {
   // 日油耗与航速
   fuelSpeed: {
     mainLaden: '满载主机',
-    mainBallast: '空载主机',
+    mainBallast: '压载主机',
     seaAuxiliary: '航行辅机',
     portIdle: '在港闲置',
     portWorking: '在港作业',
-    ballastFull: '空载全速',
-    ballastEco: '空载经济',
+    ballastFull: '压载全速',
+    ballastEco: '压载经济',
     ladenFull: '满载全速',
     ladenEco: '满载经济',
     tonnesPerDayValue: '{value} t/天',
