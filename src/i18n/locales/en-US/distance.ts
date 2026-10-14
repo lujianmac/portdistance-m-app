@@ -36,6 +36,7 @@ export default {
     summary: 'Total (ECA) {distance} ({eca}) NM · Sea {days} days ({speed} kn)',
     // Display-only: the sea-time LABEL is dropped so the row stops wrapping; the time itself stays.
     summaryCompact: 'Total (ECA) {distance} ({eca}) NM · {days} days ({speed} kn)',
+    clearAll: 'Clear all records',
   },
   // Distance summary
   summary: {

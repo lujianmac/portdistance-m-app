@@ -36,6 +36,7 @@ export default {
     summary: 'Toplam (ECA) {distance} ({eca}) NM · Seyir {days} gün ({speed} kn)',
     // Display-only: the sea-time LABEL is dropped so the row stops wrapping; the time itself stays.
     summaryCompact: 'Toplam (ECA) {distance} ({eca}) NM · {days} gün ({speed} kn)',
+    clearAll: 'Clear all records',
   },
   // Distance summary
   summary: {

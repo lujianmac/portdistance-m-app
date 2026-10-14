@@ -59,6 +59,15 @@ export default {
   success: 'Correcto',
   yes: 'Sí',
   no: 'No',
+  // Daily-quota dialog: shared by the distance, budget and purchase-records flows
+  quota: {
+    title: 'Notice',
+    // lead/trailing = quota blocked; purchaseLead/purchaseTrailing = plain "buy" entry in purchase records
+    lead: 'Your daily quota has been used up. Please visit',
+    trailing: 'to learn more.',
+    purchaseLead: 'Please visit',
+    purchaseTrailing: 'to purchase.',
+  },
   unit: {
     nauticalMile: 'millas náuticas',
     nauticalMileUpper: 'NM',

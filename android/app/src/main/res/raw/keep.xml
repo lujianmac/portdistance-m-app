@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  资源压缩（shrinkResources true）白名单。
+
+  @capacitor/splash-screen 在运行期用 Resources.getIdentifier("splash", "drawable", pkg)
+  按名字取启动图（SplashScreenConfig.resourceName 默认 "splash"，我们没改），
+  这种引用在静态分析里看不到，严格模式下会被当成无用资源删掉，
+  结果就是 release 包启动时只剩背景色、没有 logo。
+
+  这里显式保留；@drawable/splash 覆盖 drawable-*/splash.png 的全部密度版本。
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/splash" />

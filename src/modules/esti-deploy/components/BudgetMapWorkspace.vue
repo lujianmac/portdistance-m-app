@@ -13,6 +13,7 @@
       :turn-edit-available="!readonly && hasRoute"
       :clear-available="false"
       :pin-available="false"
+      :hide-bottom-actions="true"
       @error="error = $event"
       @map-notice="showNotice"
       @route-edit-toggle="toggleRouteEdit"

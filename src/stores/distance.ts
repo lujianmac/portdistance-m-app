@@ -7,6 +7,7 @@ import { useMapStore } from '@/stores/map'
 import type { PortInfo } from '@/types'
 import { portDisplayName } from '@/utils/port'
 import { mergePortSuggestions, portQueryVariants } from '@/utils/port-search'
+import { isQuotaExhaustedError, openQuotaExhaustedDialog } from '@/utils/quota'
 import { DEFAULT_EXCLUDED_ROUTE_POINT_IDS } from '@/utils/route'
 import type { LocalRouteGeometry } from '@/utils/route'
 import { appStorage } from '@/utils/storage'
@@ -193,6 +194,12 @@ export const useDistanceStore = defineStore('distance', () => {
     clearResult()
   }
 
+  /** 清空「最近航程」记录（只清历史列表，不动当前港口与结果）。 */
+  function clearRecentCalculations() {
+    recentCalculations.value = []
+    persistRecents()
+  }
+
   function clearRecentPorts() {
     recentPorts.value = []
     persistRecents()
@@ -283,7 +290,14 @@ export const useDistanceStore = defineStore('distance', () => {
       const geometry = useMapStore().setRouteGeometry(rawRoutePoints)
       return applyRouteGeometry(geometry)
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : t('distance.errors.calculateFailed')
+      // 当天次数用完走全局对话框（App.vue 挂的那一个），不再是页面里的 inline error：
+      // 这里把 error 清空，避免服务端原始文案和弹窗同时出现。
+      if (isQuotaExhaustedError(cause)) {
+        error.value = ''
+        openQuotaExhaustedDialog()
+      } else {
+        error.value = cause instanceof Error ? cause.message : t('distance.errors.calculateFailed')
+      }
       return false
     } finally {
       calculating.value = false
@@ -314,6 +328,7 @@ export const useDistanceStore = defineStore('distance', () => {
     clearAll,
     clearResult,
     clearRecentPorts,
+    clearRecentCalculations,
     applyRouteGeometry,
     replacePortsFromMap,
     searchPorts,

@@ -138,7 +138,13 @@
             class="recent-calculations-panel"
             :aria-label="t('distance.recentCalculations.title')"
           >
-            <h2>{{ t('distance.recentCalculations.title') }}</h2>
+            <div class="recent-calculations-head">
+              <h2>{{ t('distance.recentCalculations.title') }}</h2>
+              <!-- Only rendered while recent voyages exist, so the button appears only when there is something to clear. -->
+              <ion-button fill="clear" size="small" @click="distance.clearRecentCalculations()">
+                {{ t('distance.recentCalculations.clearAll') }}
+              </ion-button>
+            </div>
             <article
               v-for="item in distance.recentCalculations"
               :key="item.createdAt"
@@ -1778,9 +1784,27 @@ async function presentToast(message: string) {
   background: #fbfdff;
 }
 
+/* 最近航程：标题与「清除所有记录」按钮同一行，按钮贴右端 */
+.recent-calculations-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
 .recent-calculations-panel h2 {
-  margin: 0 0 6px;
+  margin: 0;
   color: #64748b;
+  font-size: 12px;
+}
+
+.recent-calculations-head ion-button {
+  flex: none;
+  height: 28px;
+  margin: 0 -6px 0 0;
+  --padding-start: 6px;
+  --padding-end: 6px;
   font-size: 12px;
 }
 

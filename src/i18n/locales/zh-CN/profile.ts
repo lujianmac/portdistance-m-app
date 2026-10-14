@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} 至 {end}',
     defaultPlan: 'PortDistance 服务订阅',
     noActiveSubscription: '暂无有效订阅',
+    purchase: '购买',
     paymentRecords: '支付记录',
     empty: '暂无购买记录',
     orderNo: '订单 {no}',

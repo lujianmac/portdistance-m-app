@@ -40,6 +40,7 @@ import type {
   VoyageBudgetLocalDraftMeta,
   WeatherMarginMode,
 } from '@/types'
+import { isQuotaExhaustedError, openQuotaExhaustedDialog } from '@/utils/quota'
 import { DEFAULT_EXCLUDED_ROUTE_POINT_IDS, buildLocalRouteGeometry, type LocalRouteGeometry } from '@/utils/route'
 import { appStorage } from '@/utils/storage'
 import type { Port as MapPort } from '@/types/protocol'
@@ -189,10 +190,13 @@ function emptyCosts(): BudgetCosts {
 }
 
 function emptyMargins(): BudgetMargins {
+  // 新建预算的「整体在港余量」默认按百分比（业主 2.2 要求）；已保存的预算不受影响：
+  // normalizeDocument 里展开顺序是 { ...base.margins, ...(input.portSequence?.margins) }，
+  // 存档自己的 mode 一定覆盖这里的默认值。默认值 0 在两种模式下都是 0 天，不改变计算结果。
   return {
-    portIdleMode: 'days',
+    portIdleMode: 'percent',
     portIdleValue: 0,
-    portWorkingMode: 'days',
+    portWorkingMode: 'percent',
     portWorkingValue: 0,
     portIdleDays: 0,
     portWorkingDays: 0,
@@ -447,7 +451,9 @@ export function recalculateBudget(document: VoyageBudgetDocument) {
   const operatingCost = totalFuelCost + totalPortCharge + numberValue(costs.ilohc) + numberValue(costs.cev) + numberValue(costs.opOther) + numberValue(costs.inspection)
   const hire = numberValue(costs.hirePerDay) * totalVoyageDays
   const hireCost = hire - hire * numberValue(costs.hireCommPercent) / 100
-  const totalExpense = hireCost + numberValue(costs.fixedCost) + totalFuelCost + totalPortCharge + numberValue(costs.ilohc) + numberValue(costs.cev) + numberValue(costs.opOther) - numberValue(costs.inspection)
+  // 检验费用是「加」在总费用上的（与老系统 getTtlExpense / getOpExpense 一致；此前误写成减号，
+  // 会导致检验费用对净利润完全没有影响）
+  const totalExpense = hireCost + numberValue(costs.fixedCost) + totalFuelCost + totalPortCharge + numberValue(costs.ilohc) + numberValue(costs.cev) + numberValue(costs.opOther) + numberValue(costs.inspection)
   const operatingProfit = netIncome - operatingCost
   const netProfit = netIncome - totalExpense
 
@@ -902,6 +908,11 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
       recalculateRouteDays()
       recalculate()
       return true
+    } catch (cause) {
+      // 当天次数用完：弹全局对话框（和航程计算 tab 同一个），错误继续抛给调用方，
+      // 调用方用 isQuotaExhaustedError 跳过通用 toast，避免「弹窗 + toast」双重提示。
+      if (isQuotaExhaustedError(cause)) openQuotaExhaustedDialog()
+      throw cause
     } finally {
       calculatingRoute.value = false
     }

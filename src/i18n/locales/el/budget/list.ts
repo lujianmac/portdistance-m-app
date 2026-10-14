@@ -23,6 +23,8 @@ export default {
   emptyPoint3: 'Leg-by-leg and full-voyage fuel estimates',
   emptyPoint4: 'Flexible margin control',
   createCta: 'Create a Voyage Estimation',
+  guideTip1: 'The new Voyage Estimation will be coming to the web app soon.',
+  guideTip2: 'The legacy Voyage Estimation will keep being maintained on the web.',
   legacyCta: 'View Legacy Estimation History',
   // Budget card
   unnamedBudget: 'Unnamed voyage estimation',

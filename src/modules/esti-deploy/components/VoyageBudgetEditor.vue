@@ -10,7 +10,8 @@
             <span class="editor-back-text">{{ t('budget.editor.header.back') }}</span>
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ store.editorMode === 'edit' ? t('budget.editor.header.editTitle') : t('budget.editor.header.newTitle') }}</ion-title>
+        <!-- No title while editing an existing budget (product decision); "New" only when creating. -->
+        <ion-title v-if="store.editorMode !== 'edit'">{{ t('budget.editor.header.newTitle') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -22,7 +23,7 @@
         </section>
 
         <template v-else>
-          <section class="editor-section" :aria-label="t('budget.editor.basic.heading')">
+          <section class="editor-section basic-section" :aria-label="t('budget.editor.basic.heading')">
             <ion-list lines="full" class="editor-list basic-list">
               <ion-item>
                 <ion-input v-model.trim="store.name" :label="t('budget.editor.basic.name')" label-placement="floating" :maxlength="80" :placeholder="t('budget.editor.basic.namePlaceholder')" />
@@ -82,8 +83,11 @@
                    all four daily-fuel fields except the sea-auxiliary one to be filled (> 0);
                  - template selected -> the whole row is hidden (no name input, no button) and is
                    replaced by the "modified + save changes to template" row only while the current
-                   fuel/speed values differ from the selected template. -->
-            <div v-if="!templateSelected" class="template-save-row">
+                   fuel/speed values differ from the selected template.
+                 The row's own visibility is gated on the fuel values only (NOT on canSetAsTemplate),
+                 because the template name is typed inside this very row - gating on the name would
+                 deadlock: no name -> no row -> no way to type the name. -->
+            <div v-if="showsTemplateSaveRow" class="template-save-row">
               <ion-item lines="full" class="template-name-item"><ion-input v-model.trim="newTemplateName" :label="t('budget.editor.fuel.templateName')" label-placement="floating" :placeholder="t('budget.editor.fuel.templateNamePlaceholder')" /></ion-item>
               <ion-button fill="outline" :disabled="!canSetAsTemplate" @click="saveCurrentAsTemplate">{{ t('budget.editor.fuel.setAsTemplate') }}</ion-button>
             </div>
@@ -175,7 +179,8 @@
                   </ion-segment>
                   <!-- Custom margin: the value input comes first, the percent/days mode is a switch next to it. -->
                   <div v-if="weatherPreset(port) === 'custom'" class="weather-custom-row">
-                    <ion-item lines="full"><ion-input :value="numberText(port.weatherMarginValue)" :label="t('budget.editor.ports.weatherValue')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'weatherMarginValue', $event)" /></ion-item>
+                    <!-- Percent mode shows the same non-editable "%" unit as the overall-margin rows. -->
+                    <ion-item lines="full"><ion-input :value="numberText(port.weatherMarginValue)" :label="t('budget.editor.ports.weatherValue')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'weatherMarginValue', $event)" /><span v-if="port.weatherMarginMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
                     <ion-segment :value="port.weatherMarginMode" @ion-change="updateWeatherMode(index, $event)">
                       <ion-segment-button value="percent"><ion-label>{{ t('budget.editor.ports.weatherPercent') }}</ion-label></ion-segment-button>
                       <ion-segment-button value="days"><ion-label>{{ t('budget.editor.ports.weatherDays') }}</ion-label></ion-segment-button>
@@ -188,12 +193,27 @@
 
             <section v-if="store.hasCalculatedRoute" class="overall-margin">
               <h3>{{ t('budget.editor.ports.overallHeading') }}</h3>
-              <!-- Overall margins: idle mode/value + working mode/value all on one row. -->
-              <div class="field-grid overall-grid">
-                <ion-item lines="full"><ion-select :value="store.document.margins.portIdleMode" :label="t('budget.editor.ports.idleMargin')" label-placement="floating" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portIdleMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
-                <ion-item lines="full"><ion-input :value="numberText(store.document.margins.portIdleValue)" :label="store.document.margins.portIdleMode === 'percent' ? t('budget.editor.ports.idleMarginPercent') : t('budget.editor.ports.idleMarginDays')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateMarginValue('portIdleValue', $event)" /></ion-item>
-                <ion-item lines="full" class="overall-working-item"><ion-select :value="store.document.margins.portWorkingMode" :label="t('budget.editor.ports.workingMargin')" label-placement="floating" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portWorkingMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
-                <ion-item lines="full"><ion-input :value="numberText(store.document.margins.portWorkingValue)" :label="store.document.margins.portWorkingMode === 'percent' ? t('budget.editor.ports.workingMarginPercent') : t('budget.editor.ports.workingMarginDays')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateMarginValue('portWorkingValue', $event)" /></ion-item>
+              <!-- Overall margins: the idle and the working group share one row, each a title row
+                   plus an unlabelled mode select and value input stacked underneath.
+                   The value inputs are keyed by their mode so Ionic re-reads the host aria-label
+                   (it inherits aria attributes only once, on load) and keeps the unit announced. -->
+              <div class="overall-groups">
+              <div class="overall-group" role="group" :aria-label="t('budget.editor.ports.idleMargin')">
+                <span class="overall-group-title">{{ t('budget.editor.ports.idleMargin') }}</span>
+                <div class="field-grid overall-grid">
+                  <ion-item lines="full"><ion-select :value="store.document.margins.portIdleMode" :aria-label="t('budget.editor.ports.idleMargin')" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portIdleMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
+                  <!-- Percent mode shows a plain "%" unit next to the value: a non-editable span,
+                       same construction as the commission rows of the cargo sheet. -->
+                  <ion-item lines="full"><ion-input :key="`idle-value-${store.document.margins.portIdleMode}`" :value="numberText(store.document.margins.portIdleValue)" :aria-label="store.document.margins.portIdleMode === 'percent' ? t('budget.editor.ports.idleMarginPercent') : t('budget.editor.ports.idleMarginDays')" type="number" inputmode="decimal" @ion-input="updateMarginValue('portIdleValue', $event)" /><span v-if="store.document.margins.portIdleMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
+                </div>
+              </div>
+              <div class="overall-group" role="group" :aria-label="t('budget.editor.ports.workingMargin')">
+                <span class="overall-group-title">{{ t('budget.editor.ports.workingMargin') }}</span>
+                <div class="field-grid overall-grid">
+                  <ion-item lines="full"><ion-select :value="store.document.margins.portWorkingMode" :aria-label="t('budget.editor.ports.workingMargin')" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portWorkingMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
+                  <ion-item lines="full"><ion-input :key="`working-value-${store.document.margins.portWorkingMode}`" :value="numberText(store.document.margins.portWorkingValue)" :aria-label="store.document.margins.portWorkingMode === 'percent' ? t('budget.editor.ports.workingMarginPercent') : t('budget.editor.ports.workingMarginDays')" type="number" inputmode="decimal" @ion-input="updateMarginValue('portWorkingValue', $event)" /><span v-if="store.document.margins.portWorkingMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
+                </div>
+              </div>
               </div>
               <small>{{ t('budget.editor.ports.marginSummary', { idle: numberText(store.document.margins.portIdleDays), working: numberText(store.document.margins.portWorkingDays) }) }}</small>
             </section>
@@ -308,11 +328,17 @@
       </ion-fab>
     </ion-content>
 
-    <!-- Voyage start (first port ETA) picker: a bottom sheet so the calendar never slides under the status bar. -->
+    <!-- Voyage start (first port ETA) picker: a bottom sheet so the calendar never slides under the status bar.
+         The datetime is intentionally NOT kept mounted: while the sheet is closed the component measures
+         0x0 (its month strip has scrollWidth 0), and ion-datetime only reveals the calendar grid
+         (.calendar-body opacity 0 -> 1) and re-centres the month strip when its own "datetime-ready"
+         transition runs on the visible element. Mounting it per presentation makes that transition
+         (IntersectionObserver + the component's 100ms ensureReadyIfVisible fallback) always run while
+         the sheet is on screen, so the date grid can never stay invisible with only the weekday
+         header and the time row showing. -->
     <ion-modal
       class="start-at-sheet"
       :is-open="startAtEditorOpen"
-      :keep-contents-mounted="true"
       :breakpoints="START_AT_SHEET_BREAKPOINTS"
       :initial-breakpoint="START_AT_SHEET_INITIAL_BREAKPOINT"
       @did-dismiss="startAtEditorOpen = false"
@@ -385,14 +411,16 @@
     <ion-modal :is-open="templateManagerOpen" @did-dismiss="closeTemplateManager">
       <!-- One shared toolbar for both daily-fuel-template views (list / template editor):
            adds the same centred title route pages use, and gives the header its own class so the
-           scoped rules below can pin this toolbar to the app's 44px flat page header (item 1.1-f). -->
-      <ion-header class="template-manager-header"><ion-toolbar><ion-buttons slot="start"><ion-button v-if="!templateDraft" :aria-label="t('budget.editor.templates.add')" @click="openNewTemplate"><Plus :size="22" /></ion-button><ion-button v-else @click="templateDraft = null">{{ t('budget.editor.actions.back') }}</ion-button></ion-buttons><ion-title>{{ templateDraft ? t('budget.editor.templates.editTitle') : t('budget.editor.templates.managerTitle') }}</ion-title><ion-buttons slot="end"><ion-button @click="closeTemplateManager">{{ t('budget.editor.actions.close') }}</ion-button></ion-buttons></ion-toolbar></ion-header>
+           scoped rules below can pin this toolbar to the app's 44px flat page header (item 1.1-f).
+           The start slot only carries the "new template" entry of the list view; the template
+           editor has no back button at all (owner 2.2), the close button is the single way out. -->
+      <ion-header class="template-manager-header"><ion-toolbar><ion-buttons slot="start"><ion-button v-if="!templateDraft" :aria-label="t('budget.editor.templates.add')" @click="openNewTemplate"><Plus :size="22" /></ion-button></ion-buttons><ion-title>{{ templateDraft ? t('budget.editor.templates.editTitle') : t('budget.editor.templates.managerTitle') }}</ion-title><ion-buttons slot="end"><ion-button @click="closeTemplateManager">{{ t('budget.editor.actions.close') }}</ion-button></ion-buttons></ion-toolbar></ion-header>
       <ion-content class="modal-content">
-        <ion-list v-if="!templateDraft" lines="full" class="modal-list">
+        <ion-list v-if="!templateDraft" lines="full" class="modal-list template-list">
           <ion-item v-if="!store.fuelTemplates.length"><ion-label color="medium">{{ t('budget.editor.templates.empty') }}</ion-label></ion-item>
           <ion-item v-for="template in store.fuelTemplates" :key="template.id">
             <ion-label><strong>{{ template.name }}</strong><p>{{ t('budget.editor.templates.summary', { laden: template.seaLadenFuel, ballast: template.seaBallastFuel, aux: template.seaAuxFuel }) }}</p></ion-label>
-            <ion-buttons slot="end"><ion-button @click="applyTemplate(template)">{{ t('budget.editor.templates.apply') }}</ion-button><ion-button :aria-label="t('budget.editor.templates.edit')" @click="editTemplate(template)"><Pencil :size="17" /></ion-button><ion-button color="danger" :aria-label="t('budget.editor.templates.remove')" @click="confirmRemoveTemplate(template.id)"><Trash2 :size="17" /></ion-button></ion-buttons>
+            <ion-buttons slot="end"><ion-button class="template-apply-button" @click="applyTemplate(template)">{{ t('budget.editor.templates.apply') }}</ion-button><ion-button :aria-label="t('budget.editor.templates.edit')" @click="editTemplate(template)"><Pencil :size="17" /></ion-button><ion-button color="danger" :aria-label="t('budget.editor.templates.remove')" @click="confirmRemoveTemplate(template.id)"><Trash2 :size="17" /></ion-button></ion-buttons>
           </ion-item>
         </ion-list>
         <template v-else>
@@ -417,13 +445,20 @@
             <ion-item lines="full"><ion-input :value="numberText(templateDraft.ladenEcoSpeed)" :label="t('budget.editor.templates.ladenEcoSpeed')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('ladenEcoSpeed', $event)" /></ion-item>
           </div>
         </template>
-        <div v-if="templateDraft" class="modal-submit"><ion-button expand="block" @click="saveTemplateDraft">{{ t('budget.editor.templates.save') }}</ion-button></div>
+        <!-- Empty template list: the same "new template" action as the toolbar "+" as a full-width
+             block button under the list, so the action is reachable without the header icon.
+             It stays AFTER the v-else block on purpose: an element between a v-if and its v-else
+             would take over the v-else binding. -->
+        <div v-if="!templateDraft && !store.fuelTemplates.length" class="modal-submit template-empty-actions">
+          <ion-button expand="block" class="template-block-button" @click="openNewTemplate"><Plus :size="18" aria-hidden="true" /> {{ t('budget.editor.templates.add') }}</ion-button>
+        </div>
+        <div v-if="templateDraft" class="modal-submit"><ion-button expand="block" class="template-block-button" @click="saveTemplateDraft">{{ t('budget.editor.templates.save') }}</ion-button></div>
       </ion-content>
     </ion-modal>
 
     <ion-modal :is-open="formulaOpen" @did-dismiss="formulaOpen = false">
       <ion-header><ion-toolbar><ion-title>{{ t('budget.editor.results.formulaSheetTitle') }}</ion-title><ion-buttons slot="end"><ion-button @click="formulaOpen = false">{{ t('budget.editor.actions.close') }}</ion-button></ion-buttons></ion-toolbar></ion-header>
-      <ion-content class="modal-content">
+      <ion-content class="modal-content result-formula-content">
         <p class="result-formula-subtitle">{{ t('budget.editor.results.formulaSheetSubtitle') }}</p>
         <div class="result-formula-list"><article v-for="item in resultFormulaItems" :key="item.label" class="result-formula-item"><div class="result-formula-head"><strong>{{ item.label }}</strong><span>{{ amount(item.value) }}</span></div><p class="result-formula-expression">{{ item.expression }}</p><p class="result-formula-detail">{{ item.detail }}</p></article></div>
       </ion-content>
@@ -481,6 +516,7 @@ import { DEFAULT_SPEED } from '@/config/runtime'
 import { formatAmount, formatDateTime } from '@/i18n/format'
 import { portCountryCode, portCountryName } from '@/utils/port'
 import { mergePortSuggestions, portQueryVariants } from '@/utils/port-search'
+import { isQuotaExhaustedError } from '@/utils/quota'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
 import type {
   BudgetCargo,
@@ -915,17 +951,37 @@ async function requestEditorExit() {
 
 async function initializeEditor() {
   skipAutomaticDraft = false
+  const id = String(route.query.id || '')
+  const numericId = Number(id)
+  /**
+   * store 已经持有同一份预算（刚从地图 / 详情页 / 分享弹窗返回）时直接复用内存文档：
+   * 1) 不再把 initializing 置 true —— 否则整页会被 loading 占位符替换、ion-content 的滚动位置归零，
+   *    用户看到的就是「从地图回来页面刷新了一下」（即使一个接口都没请求）；
+   * 2) 不再重复请求油耗模板 / 船舶列表（这两个列表在首次进入本页时已经加载过）。
+   * 首次进入本页（initialized 还是 false）或换了一个 id 时照旧走完整初始化。
+   * 判定条件与详情页 holdsBudget() 一致：document 既来自该 id 的服务端详情，当前编辑对象也仍是它。
+   */
+  const holdsBudget = Number.isFinite(numericId) && numericId > 0
+    && store.detailLoadedId === numericId && store.currentId === numericId
+  if (holdsBudget && initialized.value && loadedId.value === id) return
+  // 防御性合并：同一次进入实测只会调用一次 initializeEditor（onMounted 只装守卫），
+  // 这里共用同一个在途 Promise，万一 Ionic 连续派发两次生命周期也不会重复请求同一份详情。
+  if (initializationTask) return initializationTask
+  initializationTask = runInitialization(id, numericId, holdsBudget).finally(() => {
+    initializationTask = null
+  })
+  return initializationTask
+}
+
+let initializationTask: Promise<void> | null = null
+
+async function runInitialization(id: string, numericId: number, holdsBudget: boolean) {
   initializing.value = true
   try {
     await Promise.all([
       store.loadFuelTemplates().catch(() => undefined),
       store.loadVessels().catch(() => undefined),
     ])
-    const id = String(route.query.id || '')
-    const numericId = Number(id)
-    // store 已经持有同一份预算（例如刚从详情页进来）时不再重复请求详情
-    const holdsBudget = Number.isFinite(numericId) && numericId > 0
-      && store.detailLoadedId === numericId && store.currentId === numericId
     if (id && id !== loadedId.value) {
       if (!holdsBudget) await store.loadDetail(numericId)
       loadedId.value = id
@@ -1029,9 +1085,19 @@ const TEMPLATE_EPSILON = 1e-6
 
 /** 是否已选中一个模板（选中后模板名称 + 设为模板整行隐藏）。 */
 const templateSelected = computed(() => Boolean(store.document.fuelTemplateId))
+/** 模板覆盖的四个日油耗是否都已填（> 0，航行辅机除外）——只看数值，不含模板名称。 */
+const requiredFuelFilled = computed(() => TEMPLATE_REQUIRED_FUEL_FIELDS.every((field) => numberOf(store.document.fuel[field]) > 0))
 /** 「设为模板」可点：要有模板名称，且四个日油耗字段都 > 0（航行辅机除外）。 */
-const canSetAsTemplate = computed(() => Boolean(newTemplateName.value.trim())
-  && TEMPLATE_REQUIRED_FUEL_FIELDS.every((field) => numberOf(store.document.fuel[field]) > 0))
+const canSetAsTemplate = computed(() => Boolean(newTemplateName.value.trim()) && requiredFuelFilled.value)
+/**
+ * 「模板名称 + 设为模板」整行是否出现（业主 2.2：默认不出现，只有「不选模板 + 日油耗填够」才出现）。
+ * 为什么门控用 requiredFuelFilled 而不是 canSetAsTemplate：模板名称输入框就在这一行里，
+ * 若整行依赖 canSetAsTemplate（= 有名称 && 有油耗），就会出现「没有名称 → 整行不显示 →
+ * 没地方输入名称」的死锁；所以整行只按油耗判断，名称只用来控制按钮的 disabled。
+ * 按钮的 disabled 仍然保持 canSetAsTemplate，因此名称没填时按钮是灰的。
+ * 选中模板时整行不显示（沿用 v-else-if 的「已修改 + 保存变动到模板」行，行为不变）。
+ */
+const showsTemplateSaveRow = computed(() => !templateSelected.value && requiredFuelFilled.value)
 /** 当前选中的模板对象（列表还没加载到 / 已被删除时为 null）。 */
 const selectedFuelTemplate = computed(() => store.fuelTemplates.find((item) => String(item.id) === String(store.document.fuelTemplateId)) || null)
 /** 用户是否改动过模板覆盖的值（5 个日油耗 + 4 个航速）。 */
@@ -1349,6 +1415,8 @@ async function toggleRoute() {
     const calculated = await store.calculateRoute()
     if (!calculated) throw new Error(t('budget.editor.errors.routeFailed'))
   } catch (cause) {
+    // 当天次数用完已经由全局对话框提示（store 里触发），这里不再弹 danger toast。
+    if (isQuotaExhaustedError(cause)) return
     await showToast(messageOf(cause, t('budget.editor.errors.routeFailed')), 'danger')
   }
 }
@@ -1531,6 +1599,9 @@ function messageOf(cause: unknown, fallback: string) {
 .template-name-item { flex: 1 1 auto; min-width: 0; --min-height: 64px; --padding-start: 0; --inner-padding-end: 0; }
 .weather-custom-row ion-item { min-width: 0; --min-height: 64px; }
 .field-unit { flex: none; align-self: center; margin-inline-start: 5px; padding-inline-end: 2px; color: #6b7c8d; font-size: 12px; white-space: nowrap; }
+/* 整体在港余量：百分比模式下数值右侧的「%」单位（纯文本，不可编辑）。
+   宽度只有 1 个字符，给 item 右端留 2px，避免贴着卡片边缘。 */
+.margin-unit { margin-inline-start: 2px; padding-inline-end: 2px; font-size: 14px; }
 
 /* ===== 编辑页工具栏：返回图标 + 文字、标题小一号（本轮）=====
    返回控件仍是 ion-button（不是 ion-back-button）：
@@ -1661,6 +1732,12 @@ ion-select.select-label-placement-floating.label-floating::part(label) {
 
 /* 基本信息：无标题，船舶选择与说明/规范设置按钮同一行（参考小程序 BudgetBasicInfoPanel.vue） */
 .basic-list { margin-top: 0; }
+/* 2.1 预算名称上方的留白 −16px（实测 390pt：卡片上边缘 → 名称行 23px → 7px）。
+   23px = 卡片 1px 边框 + 14px 卡片内边距 + ion-list（md）自带 8px 上下内边距；
+   这里把该列表的 8px 上内边距归零、只给基本信息卡片 6px 上内边距：
+   1 + 6 + 0 = 7px。列表下内边距保持 Ionic 默认，名称行与船舶行之间不受影响。 */
+.basic-section { padding-top: 6px; }
+.basic-section .basic-list { padding-top: 0; }
 .ship-field { display: flex; align-items: center; gap: 6px; }
 .ship-field .ship-item { flex: 1 1 auto; min-width: 0; --min-height: 64px; }
 .ship-field ion-button { flex: none; height: 38px; margin: 0; --padding-start: 10px; --padding-end: 10px; }
@@ -1704,12 +1781,26 @@ ion-select.select-label-placement-floating.label-floating::part(label) {
 .schedule-time-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; color: #667085; font-size: 11px; }
 /* 到港/离港时间 +1px（13 → 14px）：这两个值是这一行真正要看的信息 */
 .schedule-time-item strong { overflow: hidden; color: #1d2939; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+/* 到港 / 离港两列的值行给同一个 28px 行高（= 首个港口那个 28×28 日期设置按钮的高度）：
+   两列的行盒等高、文字都在 28px 行盒里垂直居中，两列的文字中心线才落在同一条水平线上
+   （实测差 4.5px → 0）。行高写在 strong 上而不是给 strong 加 display:flex，是因为
+   display:flex 会把文字包成匿名 flex item，外面那层 strong 的 text-overflow:ellipsis 会失效。
+   第一港（有按钮）和后续港（无按钮）的到港时间共用这条规则，所以两种情况都能对齐。 */
+.schedule-time-item strong { line-height: 28px; }
+.schedule-time-item > strong { min-height: 28px; }
 /* 首个港口的到港时间：日期文字 + 右侧小号修改按钮（该时间就是 store 里的 document.startAt）。
-   按钮沿用航程计算页 .time-action 的 28px 带框样式（1px #d6e2ef 描边 + 6px 圆角 + 白底），
-   选中态的蓝色仍由 --color 给出；图标同时 +1px（15 → 16，见模板里的 :size="16"）。 */
+   按钮沿用航程计算页 .time-action 的 28px 带框样式（6px 圆角 + 白底），选中态的蓝色仍由 --color 给出。
+   本轮两处调整：
+   1) 描边 #d6e2ef（白底对比度 1.24:1，几乎看不见）→ #005f88（编辑器主色，白底 7.0:1）；
+      图标 #005f88 → #00496b（同一个主色的深色档，本文件 .save-fab 的 --background-activated
+      也是这个值；白底 9.7:1），16px 线性图标配 1.5px 描边更实、不再发灰。
+   2) 右边距 -6px → 0：原来按钮整体向右越界 6px，它的右边框离「离港时间」的值只剩 2px（看着黏在一起）；
+      改成 0 后按钮完整落在到港列内，右边框离离港列 8px（实测 2px → 8px）。
+      不能再大：360px + en-US 下到港列只有 155.7px，日期「11/10/2025, 08:00」+ 2px 间隙 + 28px 按钮
+      已占 154.3px，右边距给到 2px 就会把日期挤成省略号（只剩 1.4px 余量），所以 0 是能加的最大右边距。 */
 .schedule-date { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .schedule-date strong { flex: 1 1 auto; min-width: 0; }
-.schedule-edit-button { flex: none; width: 28px; min-width: 28px; height: 28px; margin: 0 -6px 0 0; --padding-start: 0; --padding-end: 0; --color: #005f88; border: 1px solid #d6e2ef; border-radius: 6px; background: #fff; }
+.schedule-edit-button { flex: none; width: 28px; min-width: 28px; height: 28px; margin: 0; --padding-start: 0; --padding-end: 0; --color: #00496b; border: 1px solid #005f88; border-radius: 6px; background: #fff; }
 .route-summary-panel { margin-top: 12px; padding: 12px 10px; border-radius: 6px; background: #edf7f3; }
 .route-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .route-summary-grid > div, .route-fuel-grid > div { min-width: 0; }
@@ -1762,13 +1853,17 @@ ion-select.select-label-placement-floating.label-floating::part(label) {
 .route-leg-summary span, .route-leg-summary strong, .route-summary span, .route-summary strong, .result-grid span, .result-grid strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-leg-summary span, .route-summary span, .result-grid span { color: #748697; font-size: 11px; }
 .route-leg-summary strong, .route-summary strong, .result-grid strong { margin-top: 4px; color: #28475c; font-size: 13px; }
+/* 航段汇总的四个数值（距离/航行时间/ECA距离/ECA航行）+1px（13 → 14px），标签仍 11px；
+   只加这一条覆盖，上面的 .route-summary / .result-grid 保持 13px 不变。 */
+.route-leg-summary strong { font-size: 14px; }
 .fuel-leg-summary { margin-top: 10px; padding: 10px; border-radius: 6px; background: #edf7f3; color: #4c6675; font-size: 12px; }
 .fuel-leg-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin-top: 7px; }
 /* 油品标签一行、油耗值另起一行（与其它汇总网格的「标签在上、数值在下」一致） */
 .fuel-leg-item { min-width: 0; }
 .fuel-leg-item span, .fuel-leg-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fuel-leg-item span { color: #667085; font-size: 12px; }
-.fuel-leg-item strong { margin-top: 3px; color: #1d2939; font-size: 14px; font-weight: 700; }
+/* 分段油耗的数值不用粗体：字号 / 颜色不动，只把 <strong> 的默认加粗压回 400 */
+.fuel-leg-item strong { margin-top: 3px; color: #1d2939; font-size: 14px; font-weight: 400; }
 .port-operation-grid { margin-top: 6px; }
 .port-time { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 3px 7px; padding: 8px; color: #748697; font-size: 11px; }
 .port-time strong { overflow: hidden; color: #40586a; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
@@ -1792,21 +1887,91 @@ ion-select.select-label-placement-floating.label-floating::part(label) {
 .weather-margin { margin-top: 10px; min-width: 0; }
 .weather-margin > span { display: block; margin-bottom: 6px; color: #526879; font-size: 12px; }
 .weather-margin ion-segment { --background: #f2f6f8; min-width: 0; grid-auto-columns: minmax(0, 1fr); }
-.weather-margin ion-segment-button { min-height: 32px; min-width: 0; --padding-start: 6px; --padding-end: 6px; --color: #617688; --color-checked: #005f88; --indicator-color: #fff; font-size: 11px; }
+/* ===== 选中「条」改深色（本轮 1-a）=====
+   实测（390px、md、真实构建）：md 模式下 ion-segment 的指示器不是整块药丸，而是贴在按钮
+   底部的 2px 细条（Ionic md 的 .segment-button-indicator：left/right 0、bottom 0，
+   --indicator-height: 2px），颜色取 --indicator-color。原来是 #fff —— 白条画在 #f2f6f8 的
+   浅色轨道上，对比度只有 1.09:1，等于看不见（截图里四项完全一样，只有文字颜色在提示选中）。
+   现在把 --indicator-color 改成主色深蓝 #005f88，理由：
+   1) 它本来就是这一行的 --color-checked，条与选中文字同色，不引入新色；
+   2) 也是本页主色（.schedule-edit-button 描边、.fuel-cost-summary p、.result-formula-head span）；
+   3) 与 #f2f6f8 轨道的对比度 6.46:1（白色只有 1.09:1），远超 WCAG 对非文字控件的 3:1 要求。
+   文字颜色按模式分开：md 只有那条 2px 细条，文字必须继续用 #005f88（改白会在浅轨道上消失）；
+   ios 的指示器是整高药丸（--indicator-height: 100%），深底上文字必须反过来用白色，
+   所以只给 .ios 覆盖 --color-checked（Ionic 会把当前模式写成组件宿主上的类，md 实测为
+   "md in-segment ... segment-button-checked"）。
+   自定义行里的天数/百分比切换是本行的后代，同一组规则自动生效，两个分段控件保持一致。 */
+.weather-margin ion-segment-button { min-height: 32px; min-width: 0; --padding-start: 6px; --padding-end: 6px; --color: #617688; --color-checked: #005f88; --indicator-color: #005f88; font-size: 11px; }
+.weather-margin ion-segment-button.ios { --color-checked: #fff; }
 /* 自定义余量：输入框在前、百分比/天数切换在后，两者垂直居中（单位由切换按钮本身表达）。
    切换用固定宽度（150px = 两个按钮各 75px，放得下英文 Percent / Days）：
    ion-segment 自身是 width:100%，放在 auto 列里会把整行占满、把输入框挤成 0 宽
    （与 .price-heading ion-segment 的既有写法一致，那里是 142px）。 */
 .weather-custom-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; align-items: center; margin-top: 8px; }
 .weather-custom-row ion-segment { width: 100%; }
+/* 自定义余量的「%」单位（本轮 1-b）：只在百分比模式渲染，span 与类名跟整体余量行完全一致
+   （.field-unit.margin-unit，纯文本不可编辑）。这一行的输入带浮动 label：数值盒 28px 贴在
+   58px 控件底部，而行高 64px（上下各多 3px 余量），所以「%」的 margin-bottom 要比整体余量行
+   多那 3px。实测（390px、md，量到像素）：margin-bottom: 8px 时「%」墨迹 528–537、数值墨迹
+   527–538，两者中心重合（与改动前「两个控件同心」的观感一致）；9px 会让「%」高 1px。
+   对齐不能靠默认的 align-self: center：item 64px 高、数值贴在底部，居中会把「%」留在行中间。 */
+.weather-custom-row .margin-unit { align-self: flex-end; margin-bottom: 8px; }
+/* 加了「%」之后，flex 行里多了一个不可压缩的兄弟节点：原生 input 的自动最小宽度
+   （size 默认 20 字符）在 360px + en-US 下实测 119.48px，加上「%」的 2 + 13.67px 比 item 的
+   130px 宽 5.16px，「%」会越出 item 右边缘压到 8px 列间距里（zh 的 input 是 114.33px，刚好
+   卡满 130px，所以只有 en 会露）。给输入框 min-width: 0 让它可以被压到 min-content 以下：
+   实测 360 en 的 input 119.48 → 114.33px，「%」右边缘回到 166px = item 右边缘，与 zh 一致。
+   天数模式没有这个 span，输入框照旧占满整行。 */
+.weather-custom-row ion-item ion-input { min-width: 0; }
 /* 本航段增加的天数 / 整体余量合计：计算提示统一绿色粗体 */
 .weather-margin small { display: block; margin-top: 6px; color: #087443; font-size: 11px; font-weight: 700; }
 .overall-margin { margin-top: 12px; padding: 10px; border-radius: 6px; background: #f8fbfd; }
 .overall-margin h3 { margin: 0 0 8px; }
 .overall-margin small { display: block; margin-top: 8px; color: #087443; font-size: 11px; font-weight: 700; }
-/* 整体余量：等泊/作业 × 模式/数值 四个控件同一行；等泊与作业之间再多留一点间隙 */
-.overall-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 6px; }
-.overall-grid .overall-working-item { margin-inline-start: 8px; }
+/* 整体余量：等泊 / 作业两组并排成一行（组标题 + 模式下拉 + 数值输入，三行一组），组间 16px。
+   为什么组内不再把「模式下拉 + 数值输入」并排成两列（实测 360/390 × zh-CN/en-US）：
+   .overall-margin 的内容宽 360px → 286px、390px → 316px；两组并排、组间 16px 后每组只有
+   135px / 150px，组内再分两列每列仅 63.5px / 71px。而下拉显示「百分比 / Percent」时，
+   17px 文字本身就有 51.0px（百分比）/ 57.7px（Percent），加上下拉箭头那一档（文字框左侧固定 17px）
+   后需要约 75px —— 实测两列方案在 360 下把「百分比」截掉 4px（文字 51 放进 47 的框），
+   在 en 下把 Percent 截掉 11px（54 放进 47），390 en 也还差 4px。
+   控件竖排后每个控件都是整组宽（135px / 150px），标题（最长 "Working margin" 12px 粗体 94.5px）
+   与两种下拉文字都完整显示，而且整块还更矮：实测整个 .overall-margin 高度 360px 下
+   229.6px → 208.6px、390px 下 226.6px → 206.6px（两组各占 141px 高，靠并排省掉一层）。 */
+.overall-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+.overall-group { min-width: 0; }
+.overall-group-title { display: block; margin: 0 0 2px; color: #526879; font-size: 12px; font-weight: 700; }
+.overall-grid { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+/* 2.2：模式下拉与数值输入之间的行距 8 → 4px；两行各缩 8px（56 → 48px），
+   内容在行内垂直居中，因此「内容 ↔ 下划线」的间距同步由 16px → 12px
+   （下拉文字 24px 高，控件宿主 44px 居中：10px + 行内余量 6 → 2px）。
+   48px 仍是 ≥44px 的触摸目标，控件本身（Ionic 默认 min-height 44px）不会被压扁或裁切。 */
+/* 2.5（本轮 1-c）：这两行的「数值 ↔ 下划线」仍比页面其它输入框大 7px，再收一次。
+   实测（390px、md、真实构建，量到像素，口径＝数值墨迹下沿 → item 下划线首行）：
+   - 参考行（日油耗满载主机、在港闲置，浮动 label，控件 58px / 数值盒 28px 贴行底）= 10px；
+   - 基本信息「预算名称」= 5px（那是 "Verify Budget" 的 y/g 下伸部，同口径的参考值是 10px）；
+   - 改前整体余量行：行 48px、控件 44px 且无 label，数值在 44px 里居中 → 17px。
+   控件高度降不动（Ionic 默认 min-height 44px，再小就不是触摸目标），所以改为「把数值压到控件底部」：
+   给原生 input 加 padding-top: 14px —— 内容盒 44 − 14 = 30px，23px 行盒在 30px 里居中，
+   文字整体下移 14 / 2 = 7px，17px 正好变成 10px（实测 17 → 10，与参考行逐像素一致）。
+   padding 写在原生 input 上而不是 ion-input 的 --padding-top：后者会把控件盒子缩到 30px，
+   行顶 14px 变成点不到的死区；写在原生 input 上时输入框仍是整行 44px 高，点击区域不变。
+   item 的 --min-height 48 → 44：控件与行高相等，居中余量（上下各 2px）归零，下划线正好落在
+   数值盒底边（再省 2px）；44px 仍是 ≥44px 的触摸目标，行高只矮 4px。
+   同一行的下拉一起处理（--padding-top: 14px）：否则一组里「百分比」会比「0」高 7px，
+   两个控件自己先不齐。下拉文字盒 24px、内容盒 30px，实测文字墨迹下沿到线 8px（同样板子下
+   数字是 10px，差在中文字形的下伸，基线位置一致）。
+   md 下「%」单位是行内的 span，原本跟数值同心（看着是齐的）；数值下移后必须跟着下移，
+   故 align-self: flex-end + margin-bottom: 5px：实测「%」墨迹 735–744 与「0」墨迹 735–746
+   中心重合，与改动前「两者同心」的观感一致（6px 会让「%」整体上移 1px）。 */
+.overall-margin .overall-grid ion-item { --min-height: 44px; }
+.overall-margin .overall-grid ion-input :deep(input) { padding-top: 14px; }
+.overall-margin .overall-grid ion-select { --padding-top: 14px; }
+.overall-margin .overall-grid .margin-unit { align-self: flex-end; margin-bottom: 5px; }
+/* 这两组控件不再带 label，因此不会命中上面的浮动标签规则（那条同时把控件字号 16 → 17px）；
+   这里把 17px 补回来，数值/下拉文字与编辑器其它输入框保持同一号。 */
+.overall-margin ion-input, .overall-margin ion-select { font-size: 17px !important; }
+.overall-margin ion-input :deep(input), .overall-margin ion-select::part(text) { font-size: 17px !important; }
 .section-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .section-actions ion-button { margin: 0; }
 
@@ -1843,17 +2008,41 @@ ion-select.select-label-placement-floating.label-floating::part(label) {
 .cost-readonly strong { color: #334f62; }
 .cost-formula { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 10px; color: #587185; font-size: 12px; }
 /* 费用计算组：输入 + 只读结果同一行，下面一行是代入数值的计算式（对齐小程序 .cost-calculation-group / .cost-formula-hint） */
-.cost-calculation-group { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e7eef4; }
+/* 2.4 去掉「检验费行下方」与「日租金行下方」那两条淡色分割线。
+   实测这两条线是本组的 border-top（1px rgb(231,238,244)，卡片整宽 27→363）：
+   第一条在检验费用/其他营运费用那一排之下 12px，第二条在日租金行 + 代入算式之下 12px
+   —— 正是业主指的两条淡色分割线（输入行自身的下划线是 rgba(0,0,0,.30)，颜色更深，不是「淡色」）。
+   这是整组共用的整宽边框，无法只删半截，所以按组去掉：两条线恰好分别属于「日租金组」和
+   「租金佣金组」。去线时 margin/padding 曾原样保留（当时只求「去线后间距不变」），
+   本轮 1-d 才把这两处多余的纵向留白一起收掉（见下条）；各输入行自己的下划线（含检验费用、
+   日租金、其他营运费用、固定成本）全部保持原状。 */
+/* 2.5（本轮 1-d）：检验费用行 → 固定成本之间比上面几行松。
+   实测（390px、md、真实构建）各行的 item 盒间距：2×2 网格内第一行 → 第二行 8px（=.field-grid
+   的 gap），而第二行（检验费用/其他营运费用）→ 日租金行 24px、日租金算式 → 租金佣金行 24px、
+   租金佣金算式 → 固定成本行 12px —— 多出来的正是两个 .cost-calculation-group 的
+   margin-top: 12px + padding-top: 12px（那 12px 是上一轮去 border-top 时留下的：当时只为
+   「去线后间距不变」而保留，去线后它纯粹是空白），以及 .cost-fixed-grid 的 margin-top: 12px。
+   现在全部对齐到网格行距这一个值：8px（这一段的唯一基准，上面几行就是它）。
+   实测 before → after：8（网格内）→ 8；24 → 8；24 → 8；12 → 8；
+   算式提示本身与它上面那一行的 8px 间距不变（.cost-formula-hint 的 margin-top: 8px）。
+   margin/padding 之外没有别的间距来源，两列网格的行对齐不受影响（只改纵向留白）。 */
+.cost-calculation-group { margin-top: 8px; padding-top: 0; }
 .cost-group-value { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 0 2px; }
 .cost-group-value span { color: #748697; font-size: 12px; }
 .cost-group-value strong { margin-top: 4px; overflow: hidden; color: #334f62; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .cost-formula-hint { display: block; margin-top: 8px; color: #587185; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-.cost-fixed-grid { margin-top: 12px; }
+.cost-fixed-grid { margin-top: 8px; }
 .result-section { background: #f8fcff; }
 .result-grid { margin-top: 10px; }
 .result-grid strong.profit-positive { color: #087443 !important; }
 .result-grid strong.profit-negative { color: #b42318 !important; }
 /* 预算结果计算说明（弹层）：8 项，每项 = 标签 + 数值 + 表达式 + 代入明细（对齐小程序 BudgetResultFormulaPanel.vue） */
+/* 2.3 说明弹层左右留白加大：内容内边距 12 → 20px（弹层其它视图仍按 .modal-content 的 12px）。
+   实测 390pt 下标题/每项/明细的左边缘 12 → 20px、右边缘 378 → 370px，360pt 下内容宽 320 → 304px，
+   不产生横向溢出（明细块自身 9px 内边距仍在，长公式 overflow-wrap: anywhere 不截断）。
+   选择器必须带上 ion-content 与 .modal-content：.modal-content 在源码里更靠后、
+   特异性相同（都是单类），只写 .result-formula-content 会被它盖回 12px。 */
+ion-content.modal-content.result-formula-content { --padding-start: 20px; --padding-end: 20px; }
 .result-formula-subtitle { margin: 0 0 10px; color: #718293; font-size: 12px; line-height: 1.45; }
 .result-formula-item { padding: 10px 0; border-bottom: 1px solid #e7eef4; }
 .result-formula-item:last-child { border-bottom: 0; }
@@ -1938,10 +2127,33 @@ html.md ion-modal .template-manager-header > ion-toolbar > ion-title {
    放不下 Ballast(Full)/Ballast(Eco)（约 85px），会被省略号截断，所以改为两列。 */
 .modal-content .speed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .modal-list { margin: 0; }
+/* 油耗模板列表：右侧按钮组离容器右边界再近 16px。
+   行内右侧留白原本是 native 12px（.modal-content ion-list ion-item::part(native)）
+   + item-inner 12px（--inner-padding-end）= 24px；这里把 item-inner 那一段归零、
+   native 收成 8px，合计 8px，即整体 −16px，按钮组仍不贴边（末位按钮自带 2px 外边距）。
+   两条选择器都比共用的 .modal-content ion-list ion-item 多一个类，只命中模板列表。 */
+.modal-content ion-list.template-list ion-item { --inner-padding-end: 0; }
+.modal-content ion-list.template-list ion-item::part(native) { padding-inline-end: 8px; }
+/* 「应用」按钮比两侧图标按钮大一号（13 → 14px）：宿主与原生按钮各写一次，
+   避免 Ionic 内部的 .button-native 字号把宿主的字号吃掉。 */
+.template-apply-button { font-size: 14px; }
+.template-apply-button::part(native) { font-size: 14px; }
 .modal-grid { margin-top: 10px; }
 .three-column { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 /* 底部确认/保存按钮与上方输入区之间留一行空隙 */
 .modal-submit { margin-top: 16px; padding: 4px 0 12px; }
+/* 油耗模板弹层的整宽按钮（空态「新增模板」/ 编辑态「保存模板」）：高度与页面底部操作按钮
+   （.editor-actions ion-button）一致的 52px，左右内边距也取页面按钮的实际值
+   （实测 --padding-start/--padding-end: 1.1em → 原生按钮左右各 15.4px），
+   「保存模板」原先只有 Ionic 默认的 36px 高。 */
+.template-block-button {
+  height: 52px;
+  margin: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 1.1em;
+  --padding-end: 1.1em;
+}
 
 /* 港口选择（「添加港口」弹层）：用 ion-item + ion-input 代替 ion-searchbar
    （后者在 iOS 高度固定 36px）。尺寸/描边/内边距与航程计算页的 .search-field 完全一致：
@@ -1978,7 +2190,13 @@ html.md ion-modal .template-manager-header > ion-toolbar > ion-title {
 .modal-grid .charge-field .field-unit { margin-inline-start: 4px; padding-inline-end: 0; font-size: 13px; }
 
 /* 到港时间（航次开始时间）底部 sheet：顶部 5px 处有抓手（.modal-handle），
-   给日历留出一点上边距，避免月份标题压到状态栏 */
+   给日历留出一点上边距，避免月份标题压到状态栏。
+   高度预算（实测，854/667/640 三档视口 × zh-CN/en-US × md/ios × +8% 字号）：
+   sheet 可见高度 = breakpoint 0.9 × (视口 − 安全区 − 10px) → 844 下 750.6px、667 下 591.3px、
+   640 下 567px；ion-datetime 自身内容高度 md 456px / ios 350px，en-US 且字号 +8% 时 md 504px。
+   最紧的一档（640 视口 + en-US + 字号 +8%）仍有 63px 余量，日历网格（.calendar-body）在各档
+   实测都是 260px(md)/165px(ios)、从未被压缩，所以这里的 10px 上边距可以保留；
+   真正会导致「只有星期和时间、没有日期」的是组件自身的 ready/滚动条状态，见模板里 sheet 的注释。 */
 .start-at-sheet ion-datetime { padding-top: 10px; }
 
 /* ===== ion-select 弹层（本页自己的 cssClass，见 script 里的 selectInterfaceOptions）=====

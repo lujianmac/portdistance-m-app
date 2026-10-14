@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} έως {end}',
     defaultPlan: 'Συνδρομή υπηρεσίας PortDistance',
     noActiveSubscription: 'Δεν υπάρχει ενεργή συνδρομή',
+    purchase: 'Purchase',
     paymentRecords: 'Ιστορικό πληρωμών',
     empty: 'Δεν υπάρχουν αγορές',
     orderNo: 'Παραγγελία {no}',

@@ -14,6 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppBackButton from '@/components/AppBackButton.vue'
 import BudgetMapWorkspace from '@/modules/esti-deploy/components/BudgetMapWorkspace.vue'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
+import { isQuotaExhaustedError } from '@/utils/quota'
 import type { LocalRouteGeometry } from '@/utils/route'
 import type { Port } from '@/types/protocol'
 
@@ -40,6 +41,8 @@ async function recalculateFromMap(payload: { ports: Port[]; excludedRoutePointId
     const toast = await toastController.create({ message: t('budget.map.updated'), color: 'success', duration: 2000, position: 'top' })
     await toast.present()
   } catch (cause) {
+    // 当天次数用完已经由全局对话框提示（store 里触发），这里不再弹 danger toast。
+    if (isQuotaExhaustedError(cause)) return
     const toast = await toastController.create({ message: cause instanceof Error ? cause.message : t('budget.map.updateFailed'), color: 'danger', duration: 2400, position: 'top' })
     await toast.present()
   } finally {

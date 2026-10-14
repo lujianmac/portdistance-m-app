@@ -57,6 +57,7 @@ import { getRoutePoint } from '@/api/distance'
 import { applyRoutePointStateChange, buildRouteEditorDraft, queryRoutePointByWayPoint } from '@/components/map/modules/routePoint'
 import { useDistanceStore } from '@/stores/distance'
 import { useMapStore } from '@/stores/map'
+import { isQuotaExhaustedDialogOpen } from '@/utils/quota'
 import type { RoutePointConfig, RouteState } from '@/types/map'
 
 /** Six decimals is the common maritime coordinate precision (~0.11 m). */
@@ -193,7 +194,7 @@ async function applyRoutePointEdit(payload: { state: RouteState; prePortCode?: s
   clearEditModes()
   const excluded = routePointConfig.value.filter((item) => item.option === '-1').map((item) => item.wayPointId)
   const ok = await distance.calculate(excluded)
-  if (!ok) showNotice(distance.error || t('map.core.workspace.recalcFailed'))
+  if (!ok && !isQuotaExhaustedDialogOpen()) showNotice(distance.error || t('map.core.workspace.recalcFailed'))
 }
 
 function openTurnPointCreate(payload: { anchorRouteSeq: number; lon: number; lat: number }) {

@@ -9,6 +9,11 @@ lerna-debug.log*
 
 node_modules
 dist
+
+# Android 发布签名（绝不入库）
+android/keystore.properties
+*.jks
+*.keystore
 dist-ssr
 *.local
 

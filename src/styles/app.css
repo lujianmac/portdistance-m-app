@@ -43,9 +43,9 @@ ion-header ion-toolbar {
    ion-title 也是 20px/500、左对齐、左右各 20px 内边距；本应用 iOS 的观感是 44px
    扁平栏 + 自带的 1px 下边框。
    选择器只认「路由页面」的 div.ion-page：弹窗/浮层的 delegate host 也是
-   div.ion-page，但它额外带 .ion-delegate-host，必须排除，这样 ion-modal 的弹窗头部
-   （如 .share-dialog-header，--min-height: 52px）保持原样；底部操作栏
-   .detail-action-bar（ion-footer，--min-height: 46px）也不在 ion-header 里，同样不受影响。
+   div.ion-page，但它额外带 .ion-delegate-host，页面规则必须排除它，
+   弹层的扁平化由下面单独一条 .ion-delegate-host 规则负责；底部操作栏
+   .detail-action-bar（ion-footer，--min-height: 46px）不在 ion-header 里，不受影响。
    安全区仍由 Ionic 的 ion-header ion-toolbar:first-of-type { padding-top: var(--ion-safe-area-top) }
    提供，这里只改工具栏容器的变量，不碰宿主元素的 padding。 */
 html.md .ion-page:not(.ion-delegate-host) > ion-header.header-md,
@@ -57,16 +57,80 @@ html.md .ion-page:not(.ion-delegate-host) > ion-header > ion-toolbar {
   --min-height: 44px;
 }
 
-html.md .ion-page:not(.ion-delegate-host) > ion-header > ion-toolbar > ion-title {
-  /* md 默认 font-size: 1.25rem / font-weight: 500 / padding-inline: 20px 且左对齐。
-     这里不能照搬 iOS 的 90px 内边距：iOS 的 ion-title 是绝对定位、铺满整条工具栏，
-     而 md 下它仍在文档流里、只占两侧按钮之间的剩余宽度，照搬会把带按钮/徽标的
-     标题裁掉；改成居中 + 收窄内边距，长标题也只是按 md 自己的省略号规则截断。 */
-  padding-inline: 12px;
+/* 标题的 md 观感（17px/600/居中/绝对定位）由下面那条 page + delegate-host 合一的规则统一负责。 */
+
+/* Android（md）弹层头部同样扁平化。Ionic 会把弹层内容搬进 div.ion-delegate-host.ion-page
+   （实测 ion-header 的父节点不再是 ion-modal），所以上面那条页面规则把它们排除了；
+   这里单独按 .ion-delegate-host 锚一次，值与该页面规则完全一致：
+   44px、无阴影、标题 17px/600/居中/左右 12px。
+   覆盖对象：航程计算的离港时间弹层、航次预算的草稿箱/添加港口/添加货物/油耗模板/预算结果公式、
+   iOS 式分享弹窗等所有走 ion-modal 的标题栏。 */
+html.md .ion-delegate-host > ion-header.header-md,
+html.md .ion-delegate-host > ion-header.header-md > ion-toolbar {
+  box-shadow: none;
+}
+
+html.md .ion-delegate-host > ion-header > ion-toolbar {
+  --min-height: 44px;
+}
+
+/* 按钮扁平化：md 下 Ionic 给实心按钮（fill 默认）加了 Material 立体阴影
+   （0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12)），
+   FAB 还带一层品牌色投影；文字按钮（fill="clear"）与线框按钮（fill="outline"）本来就没有。
+   按产品要求「除这两类之外全部扁平」：只覆盖 --box-shadow（按钮内部 .button-native 读它），
+   按下/悬停的变色与涟漪保持不变。 */
+html.md ion-button:not([fill='clear']):not([fill='outline']),
+html.md ion-fab-button {
+  --box-shadow: none;
+  box-shadow: none;
+}
+
+/* md 页面/弹层标题：绝对定位铺满工具栏并居中，与 iOS 一致。
+   iOS 的 ion-title 是 position: absolute + width:100% + text-align:center，所以左右按钮宽度
+   不同也不会把标题推偏；md 默认它在文档流里（display:flex; flex:1），只占两侧按钮之间的
+   剩余宽度 —— 带「返回箭头 + 返回文字」的页面标题因此会偏左/偏右。这里把 md 也改成绝对定位：
+   pointer-events:none 保证标题不会挡住按钮点击，左右各留 72px 内边距避免长标题压到按钮上，
+   超长标题仍按 nowrap + 省略号截断。字号/字重/字距沿用页面观感（17px/600/0）。 */
+html.md .ion-page:not(.ion-delegate-host) > ion-header > ion-toolbar > ion-title,
+html.md .ion-delegate-host > ion-header > ion-toolbar > ion-title {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding-inline: 72px;
+  overflow: hidden;
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* md（Material）默认把按钮类文字**全大写**并加 0.06em 字距：
+   ion-button / segment-button / back-button / item-option 的 ::part(native)、
+   ion-datetime 的 ::part(datetime-title) 都有这条规则。本应用整体是 iOS 的扁平观感，
+   英文全大写既不一致，也会让 "Create account" 这类文案变宽、在窄屏换行，
+   所以统一改回正常大小写与字距（只作用于 md；iOS 本来就不大写）。
+   ion-alert 的按钮（`.alert-button`）是 scoped 组件、没有暴露 part，所以单独用一条普通选择器覆盖
+   （实测 ion-alert 没有 shadowRoot，样式表够得到）。 */
+html.md ion-button::part(native),
+html.md ion-back-button::part(native),
+html.md ion-segment-button::part(native),
+html.md ion-item-option::part(native),
+html.md ion-fab-button::part(native),
+html.md ion-datetime::part(datetime-title) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+html.md ion-alert .alert-button {
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 ion-tab-bar {

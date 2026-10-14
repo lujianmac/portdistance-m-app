@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} – {end}',
     defaultPlan: 'PortDistance servis aboneliği',
     noActiveSubscription: 'Aktif abonelik yok',
+    purchase: 'Purchase',
     paymentRecords: 'Ödeme kayıtları',
     empty: 'Satın alma kaydı yok',
     orderNo: 'Sipariş {no}',

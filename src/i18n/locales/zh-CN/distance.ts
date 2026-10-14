@@ -36,6 +36,7 @@ export default {
     summary: '全部(ECA) {distance}({eca}) 海里 · 航行 {days} 天 ({speed} 节)',
     // 仅用于列表显示：去掉「航行」这个 label 避免换行，航行时间本身保留；复制出去的内容仍然完整
     summaryCompact: '全部(ECA) {distance}({eca}) 海里 · {days} 天 ({speed} 节)',
+    clearAll: '清除所有记录',
   },
   // 航程汇总
   summary: {

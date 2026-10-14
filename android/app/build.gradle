@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// 发布签名：凭据放在 android/keystore.properties（已 gitignore，不进仓库）。
+// 文件不存在时（例如只跑 assembleDebug）自动跳过，不影响日常开发。
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.marinecircle.portdistance"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +16,8 @@ android {
         applicationId "com.marinecircle.portdistance"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Google Play 上已上传 4.0.3 / versionCode 3，新版本必须严格大于它
+        versionCode 4
         versionName "5.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,10 +26,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 开启 R8 压缩 + 混淆：Google Play「混淆」类目要求 ≥ 25%，
+            // 低于阈值会影响应用曝光度与发布能力。
+            minifyEnabled true
+            // 资源压缩：Play 控制台要求开启（"Avoid setting shrinkResources = false"）。
+            // 唯一风险点是 SplashScreen 插件用 getIdentifier 按名字动态取 splash 资源，
+            // 静态引用分析看不到它，所以用 res/raw/keep.xml 显式保留（见该文件注释）。
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 没有 keystore.properties 时保持未签名（Gradle 会产出 *-unsigned.apk/-unsigned.aab）
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

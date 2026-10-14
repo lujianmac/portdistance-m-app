@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} a {end}',
     defaultPlan: 'Suscripción al servicio PortDistance',
     noActiveSubscription: 'Sin suscripción activa',
+    purchase: 'Purchase',
     paymentRecords: 'Registros de pago',
     empty: 'No hay registros de compra',
     orderNo: 'Pedido {no}',

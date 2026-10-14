@@ -306,13 +306,25 @@
   color: var(--danger);
 }
 
+/* 触发器 + 弹层放在同一个 .map-tool-anchor 里（position: relative），
+   弹层因此贴着各自的按钮，而不是贴着整列工具栏的顶端/底端
+   —— 之前 .map-more-popup 用 bottom: 100%，加了「标点」按钮后与按钮之间空出 48px。
+   宽度不再写死：width: max-content 让各语言（英文/希腊语等较长的图层名）按内容自适应，
+   min-width 保持比原来宽 24px 的下限，超长时按 max-width 截断（标签仍 nowrap + 省略号）。 */
+.map-tool-anchor {
+  position: relative;
+  display: grid;
+}
+
 .basemap-popup {
   position: absolute;
   top: 0;
-  right: 48px;
+  right: calc(100% + 6px);
   display: grid;
   gap: 4px;
-  width: 112px;
+  width: max-content;
+  min-width: 136px;
+  max-width: min(240px, 70vw);
   padding: 5px;
   border: 1px solid rgba(16, 42, 67, 0.16);
   border-radius: 7px;
@@ -342,6 +354,12 @@
   font-weight: 700;
 }
 
+.basemap-popup-item > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .basemap-popup-preview {
   width: 44px;
   height: 28px;
@@ -353,11 +371,13 @@
 .map-more-popup {
   position: absolute;
   top: auto;
-  right: 48px;
-  bottom: 100%;
+  right: calc(100% + 6px);
+  bottom: 0;
   display: grid;
   gap: 3px;
-  width: 126px;
+  width: max-content;
+  min-width: 150px;
+  max-width: min(260px, 74vw);
   padding: 5px;
   border: 1px solid rgba(16, 42, 67, 0.16);
   border-radius: 7px;

@@ -57,6 +57,15 @@ export default {
   success: '成功',
   yes: '是',
   no: '否',
+  // 次数用完弹窗：航程计算 / 航次预算 / 购买记录共用同一个组件
+  // lead/trailing = 额度被拦下；purchaseLead/purchaseTrailing = 购买记录里主动点「购买」
+  quota: {
+    title: '提示',
+    lead: '当天次数已用完，请登录',
+    trailing: '了解更多',
+    purchaseLead: '请前往',
+    purchaseTrailing: '购买',
+  },
   unit: {
     nauticalMile: '海里',
     nauticalMileUpper: '海里',

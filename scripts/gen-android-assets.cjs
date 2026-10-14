@@ -35,8 +35,11 @@ const REPO = path.resolve(__dirname, '..')
 const RES = path.join(REPO, 'android/app/src/main/res')
 const SRC = path.join(REPO, 'resources/icon.png')
 
-/** 启动图底色，与 `values/ic_launcher_background.xml` 及 logo 自身底色一致（白），三者无缝。 */
-const SPLASH_BG = [255, 255, 255, 255]
+/** 启动图底色：品牌蓝的浅一档（hsl(220, 70%, 59%)）。白底图标资源仍用白色背景，
+    启动图则把标志转成白色画在蓝底上（见 whiteMark），避免"白方块压在蓝底上"。
+    想再深/再浅就改这一个值（同步 capacitor.config.ts 的 SplashScreen.backgroundColor
+    与 android/app/src/main/res/values/app_colors.xml 的 splash_background）。 */
+const SPLASH_BG = [76, 123, 224, 255] // #4C7BE0
 /** 启动图里 logo 的边长占屏幕短边的比例。 */
 const SPLASH_LOGO_RATIO = 0.3
 /** 自适应图标前景里 logo 占 108dp 画布的比例（安全区是 72/108 = 0.667）。 */
@@ -163,6 +166,24 @@ function roundMask(cv) {
   return cv
 }
 
+/**
+ * 把 logo 的蓝色标志转成白色笔迹：以亮度当覆盖度（白底 -> 0），
+ * 阈值 0.25/0.5 之间做平滑过渡，滤掉标志周围的浅色阴影/发光，得到干净的白色标志。
+ */
+function whiteMark(art) {
+  const out = new Uint8Array(art.width * art.height * 4)
+  for (let i = 0; i < art.width * art.height; i++) {
+    const o = i * 4
+    const lum = (0.2126 * art.data[o] + 0.7152 * art.data[o + 1] + 0.0722 * art.data[o + 2]) / 255
+    const coverage = Math.max(0, Math.min(1, (1 - lum - 0.25) / 0.25))
+    out[o] = 255
+    out[o + 1] = 255
+    out[o + 2] = 255
+    out[o + 3] = Math.round(coverage * 255)
+  }
+  return { width: art.width, height: art.height, data: out }
+}
+
 function write(file, img) {
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, Buffer.from(encode({ width: img.width, height: img.height, data: img.data, channels: 4, depth: 8 })))
@@ -186,9 +207,10 @@ for (const [density, scale] of DENSITIES) {
   write(path.join(RES, `mipmap-${density}/ic_launcher_foreground.png`), fg)
 }
 
+const mark = whiteMark(art)
 for (const [dir, w, h] of SPLASH_SIZES) {
   const logo = Math.round(Math.min(w, h) * SPLASH_LOGO_RATIO)
   const cv = canvas(w, h, SPLASH_BG)
-  paste(cv, resize(art, logo, logo), Math.round((w - logo) / 2), Math.round((h - logo) / 2))
+  paste(cv, resize(mark, logo, logo), Math.round((w - logo) / 2), Math.round((h - logo) / 2))
   write(path.join(RES, `${dir}/splash.png`), cv)
 }

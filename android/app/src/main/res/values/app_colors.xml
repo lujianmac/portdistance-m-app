@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 启动画面底色：取自 logo 标志自身的深蓝（brand blue），与 drawable-*/splash.png、capacitor.config.ts 的 SplashScreen.backgroundColor 保持一致 -->
+    <color name="splash_background">#4C7BE0</color>
+    <!-- 状态栏：与页面头部同为纯白（配合 windowLightStatusBar 的深色图标） -->
+    <color name="app_status_bar">#FFFFFF</color>
+</resources>

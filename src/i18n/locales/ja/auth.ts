@@ -10,8 +10,8 @@ export default {
     passwordPlaceholder: 'パスワードを入力',
     togglePassword: 'パスワードの表示を切り替え',
     submit: 'ログイン',
-    forgotPassword: 'パスワードをお忘れの方',
-    register: '新規アカウント登録',
+    forgotPassword: 'パスワードの再設定',
+    register: '新規登録',
     failed: 'ログインに失敗しました。しばらくしてからもう一度お試しください',
   },
   // Register page

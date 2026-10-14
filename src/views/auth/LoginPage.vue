@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { IonButton, IonContent, IonHeader, IonInput, IonPage, IonTitle, IonToolbar, toastController } from '@ionic/vue'
+import { IonButton, IonContent, IonHeader, IonInput, IonPage, IonTitle, IonToolbar, onIonViewWillEnter, toastController } from '@ionic/vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -48,6 +48,16 @@ const error = ref('')
 const canSubmit = computed(() => Boolean(form.email && form.password))
 /** Chinese banner for zh users, the English one otherwise (the images are transparent PNGs). */
 const bannerLogo = computed(() => (locale.value.startsWith('zh') ? bannerLogoZh : bannerLogoEn))
+
+/*
+ * 找回密码成功后会带着 ?email=... 回到本页。Ionic 会复用页面栈里缓存的登录页实例
+ * （setup 只执行一次），所以不能只在初始化时读一次 query：每次进入视图都按 query 回填，
+ * 保证「重置密码时用的那个邮箱」一定出现在邮箱输入框里（没有 query 时不覆盖用户已输入的值）。
+ */
+onIonViewWillEnter(() => {
+  const email = typeof route.query.email === 'string' ? route.query.email : ''
+  if (email) form.email = email
+})
 
 async function submit() {
   if (!canSubmit.value || user.loading) return
@@ -103,6 +113,13 @@ async function submit() {
 .auth-form ion-input :deep(input) { font-size: 18px !important; }
 
 .auth-form ion-input:focus-within { border-bottom-color: #006c8c; }
-.auth-links { display: flex; justify-content: space-between; margin-top: 20px; font-size: 16px; }
-.auth-links a { color: #006c8c; text-decoration: none; }
+/*
+ * 两个文字按钮（找回密码 / 注册新账号）必须各自保持单行：
+ * 之前只写了 justify-content: space-between，没有 nowrap，标签一长（英文 16px 下两个标签合计
+ * 321px > 360 屏可用的 304px）flex 就会把它们各自压成两行，也就是用户看到的「换行」。
+ * 这里 nowrap 锁死单行；万一将来某个语种又变长，flex-wrap 让它们整条换到第二行，
+ * 而不是把一条标签从中间劈开。column-gap 保证两行/单行时都不会贴在一起。
+ */
+.auth-links { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 16px; row-gap: 2px; margin-top: 20px; font-size: 16px; }
+.auth-links a { color: #006c8c; text-decoration: none; white-space: nowrap; }
 </style>

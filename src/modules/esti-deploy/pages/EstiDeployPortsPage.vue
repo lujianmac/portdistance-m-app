@@ -64,6 +64,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatNumber } from '@/i18n/format'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
+import { isQuotaExhaustedError } from '@/utils/quota'
 import type { BudgetPortTask, PortInfo } from '@/types'
 
 const { t } = useI18n()
@@ -99,7 +100,7 @@ function updateLaden(index: number, event: CustomEvent) { store.updatePort(index
 function updateSpeedMode(index: number, event: CustomEvent) { store.updatePort(index, { speedMode: event.detail.value === 'eco' ? 'eco' : 'full' }) }
 function updateWeatherMode(index: number, event: CustomEvent) { store.updatePort(index, { weatherMarginMode: event.detail.value }) }
 function updateNumber(index: number, field: 'idleDays' | 'workDays' | 'portCharge' | 'weatherMarginValue', event: CustomEvent) { store.updatePort(index, { [field]: Number(event.detail.value || 0) }) }
-async function calculateRoute() { try { const ok = await store.calculateRoute(); if (!ok) throw new Error(t('budget.pages.ports.calculateFailed')) } catch (cause) { const toast = await toastController.create({ message: cause instanceof Error ? cause.message : t('budget.pages.ports.calculateFailed'), color: 'danger', duration: 2200, position: 'top' }); await toast.present() } }
+async function calculateRoute() { try { const ok = await store.calculateRoute(); if (!ok) throw new Error(t('budget.pages.ports.calculateFailed')) } catch (cause) { if (isQuotaExhaustedError(cause)) return; const toast = await toastController.create({ message: cause instanceof Error ? cause.message : t('budget.pages.ports.calculateFailed'), color: 'danger', duration: 2200, position: 'top' }); await toast.present() } }
 </script>
 
 <style scoped>

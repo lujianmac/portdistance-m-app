@@ -7,16 +7,31 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!-- 状态栏与页面头部一致：纯白底 + 深色图标（Android 6.0+）。
+             Android 15+ 强制 edge-to-edge、Android 16 起 statusBarColor 失效，
+             真正让状态栏看着是白的是「页面白色 header 铺在状态栏下面」+ 这里的 windowBackground。 -->
+        <item name="android:statusBarColor">@color/app_status_bar</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/app_status_bar</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <item name="android:statusBarColor">@color/app_status_bar</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/app_status_bar</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- 旧系统（<= 11）走这个窗口背景图；Android 12+ 的系统启动画面用下面的
+             windowSplashScreenBackground + 应用启动图标（图标资源见 scripts/gen-android-assets.cjs） -->
         <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- 启动画面结束后切回正常主题：缺这一条时活动会一直停留在启动主题上，
+             状态栏颜色/图标就只能听系统默认（真机上看到的那条淡灰色状态栏就是这么来的） -->
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

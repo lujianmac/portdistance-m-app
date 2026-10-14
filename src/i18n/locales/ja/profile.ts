@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} 〜 {end}',
     defaultPlan: 'PortDistance サービス利用契約',
     noActiveSubscription: '有効なサブスクリプションはありません',
+    purchase: 'Purchase',
     paymentRecords: '支払い履歴',
     empty: '購入履歴はありません',
     orderNo: '注文番号 {no}',

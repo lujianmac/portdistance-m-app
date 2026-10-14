@@ -6,8 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#006c8c" />
     <title>PortDistance</title>
+    <!--
+      Boot placeholder: painted at the splash colour from the very first frame, so hiding the native
+      splash can never reveal a blank document (it also covers the timeout fallback path in main.ts).
+      Removed by src/main.ts right after mount; keep this colour in sync with capacitor.config.ts
+      (plugins.SplashScreen.backgroundColor = #4c7be0).
+    -->
+    <style>
+      #boot-placeholder {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        background: #4c7be0;
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-placeholder" aria-hidden="true"></div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

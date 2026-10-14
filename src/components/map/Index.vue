@@ -90,17 +90,35 @@
     </div>
 
     <aside class="map-tools map-tools-primary" :aria-label="t('map.layers.shell.primaryTools')">
-      <button
-        class="map-tool map-icon-tool basemap-trigger"
-        :class="{ active: basemapMenuVisible }"
-        type="button"
-        :title="t('map.layers.basemap.section')"
-        :aria-label="t('map.layers.basemap.section')"
-        :aria-expanded="basemapMenuVisible"
-        @click="toggleBasemapMenu"
-      >
-        <Layers3 :size="18" :stroke-width="1.9" aria-hidden="true" />
-      </button>
+      <div class="map-tool-anchor">
+        <button
+          class="map-tool map-icon-tool basemap-trigger"
+          :class="{ active: basemapMenuVisible }"
+          type="button"
+          :title="t('map.layers.basemap.section')"
+          :aria-label="t('map.layers.basemap.section')"
+          :aria-expanded="basemapMenuVisible"
+          @click="toggleBasemapMenu"
+        >
+          <Layers3 :size="18" :stroke-width="1.9" aria-hidden="true" />
+        </button>
+        <div v-if="basemapMenuVisible" class="basemap-popup" role="menu" :aria-label="t('map.layers.basemap.select')">
+          <button
+            v-for="option in basemapOptions"
+            :key="option.id"
+            class="basemap-popup-item"
+            :class="{ active: activeBasemapId === option.id }"
+            type="button"
+            role="menuitemradio"
+            :aria-checked="activeBasemapId === option.id"
+            @click="selectBasemap(option.id)"
+          >
+            <span class="basemap-popup-preview" :style="{ backgroundImage: `url(${option.previewUrl})` }"></span>
+            <span>{{ option.shortName }}</span>
+          </button>
+        </div>
+      </div>
+
       <button
         v-if="routeEditAvailable"
         class="map-tool map-icon-tool"
@@ -138,21 +156,6 @@
         <Trash2 :size="18" :stroke-width="1.9" aria-hidden="true" />
       </button>
 
-      <div v-if="basemapMenuVisible" class="basemap-popup" role="menu" :aria-label="t('map.layers.basemap.select')">
-        <button
-          v-for="option in basemapOptions"
-          :key="option.id"
-          class="basemap-popup-item"
-          :class="{ active: activeBasemapId === option.id }"
-          type="button"
-          role="menuitemradio"
-          :aria-checked="activeBasemapId === option.id"
-          @click="selectBasemap(option.id)"
-        >
-          <span class="basemap-popup-preview" :style="{ backgroundImage: `url(${option.previewUrl})` }"></span>
-          <span>{{ option.shortName }}</span>
-        </button>
-      </div>
     </aside>
 
     <!-- Meteorological layers are deferred to the next release. -->
@@ -217,7 +220,7 @@
       <p class="meteo-layer-source">{{ meteoGridProvider || 'Open-Meteo' }} · {{ t('map.layers.meteo.referenceOnly') }}</p>
     </section>
 
-    <aside class="map-tools map-tools-secondary" :aria-label="t('map.layers.shell.secondaryTools')">
+    <aside v-if="!hideBottomActions" class="map-tools map-tools-secondary" :aria-label="t('map.layers.shell.secondaryTools')">
       <button
         v-if="pinAvailable"
         class="map-tool map-icon-tool pin-trigger"
@@ -230,17 +233,68 @@
       >
         <MapPinPlus :size="18" :stroke-width="1.9" aria-hidden="true" />
       </button>
-      <button
-        class="map-tool map-icon-tool more-trigger"
-        :class="{ active: moreMenuVisible }"
-        type="button"
-        :title="t('map.layers.shell.layersMenu')"
-        :aria-label="t('map.layers.shell.layersMenu')"
-        :aria-expanded="moreMenuVisible"
-        @click="toggleMoreMenu"
-      >
-        <List :size="18" :stroke-width="1.9" aria-hidden="true" />
-      </button>
+      <div class="map-tool-anchor">
+        <button
+          class="map-tool map-icon-tool more-trigger"
+          :class="{ active: moreMenuVisible }"
+          type="button"
+          :title="t('map.layers.shell.layersMenu')"
+          :aria-label="t('map.layers.shell.layersMenu')"
+          :aria-expanded="moreMenuVisible"
+          @click="toggleMoreMenu"
+        >
+          <List :size="18" :stroke-width="1.9" aria-hidden="true" />
+        </button>
+        <div v-if="moreMenuVisible" class="map-more-popup" role="menu" :aria-label="t('map.layers.maritime.section')">
+          <!-- Reference layers first (timezone / graticule), maritime layers below. -->
+          <button
+            class="map-more-popup-item"
+            :class="{ active: timezoneLayerEnabled }"
+            type="button"
+            role="menuitemcheckbox"
+            :aria-checked="timezoneLayerEnabled"
+            :disabled="timezoneLayerLoading"
+            @click="toggleTimezoneLayer"
+          >
+            <Clock3 :size="16" :stroke-width="1.9" aria-hidden="true" />
+            <span>{{ timezoneMetadata.shortName }}</span>
+            <span v-if="timezoneLayerEnabled" class="map-layer-remove">
+              <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+            </span>
+          </button>
+          <button
+            class="map-more-popup-item"
+            :class="{ active: graticuleEnabled }"
+            type="button"
+            role="menuitemcheckbox"
+            :aria-checked="graticuleEnabled"
+            @click="toggleGraticule"
+          >
+            <Grid3X3 :size="16" :stroke-width="1.9" aria-hidden="true" />
+            <span>{{ t('map.layers.shell.graticule') }}</span>
+            <span v-if="graticuleEnabled" class="map-layer-remove">
+              <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+            </span>
+          </button>
+          <button
+            v-for="option in maritimeOptions"
+            :key="option.id"
+            class="map-more-popup-item"
+            :class="{ active: maritimeLayerIds.has(option.id) }"
+            type="button"
+            role="menuitemcheckbox"
+            :aria-checked="maritimeLayerIds.has(option.id)"
+            :disabled="loadingMaritimeLayerId === option.id"
+            @click="toggleMaritimeLayer(option.id)"
+          >
+            <span class="map-layer-swatch" :style="{ background: option.color }"></span>
+            <span>{{ option.shortName }}</span>
+            <span v-if="maritimeLayerIds.has(option.id)" class="map-layer-remove">
+              <X :size="13" :stroke-width="2.2" aria-hidden="true" />
+            </span>
+          </button>
+        </div>
+      </div>
       <button
         class="map-tool map-icon-tool"
         :class="{ active: measureMode === 'distance' }"
@@ -264,55 +318,6 @@
         <SquareDashedMousePointer :size="18" :stroke-width="1.9" aria-hidden="true" />
       </button>
 
-      <div v-if="moreMenuVisible" class="map-more-popup" role="menu" :aria-label="t('map.layers.maritime.section')">
-        <!-- Reference layers first (timezone / graticule), maritime layers below. -->
-        <button
-          class="map-more-popup-item"
-          :class="{ active: timezoneLayerEnabled }"
-          type="button"
-          role="menuitemcheckbox"
-          :aria-checked="timezoneLayerEnabled"
-          :disabled="timezoneLayerLoading"
-          @click="toggleTimezoneLayer"
-        >
-          <Clock3 :size="16" :stroke-width="1.9" aria-hidden="true" />
-          <span>{{ timezoneMetadata.shortName }}</span>
-          <span v-if="timezoneLayerEnabled" class="map-layer-remove">
-            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
-          </span>
-        </button>
-        <button
-          class="map-more-popup-item"
-          :class="{ active: graticuleEnabled }"
-          type="button"
-          role="menuitemcheckbox"
-          :aria-checked="graticuleEnabled"
-          @click="toggleGraticule"
-        >
-          <Grid3X3 :size="16" :stroke-width="1.9" aria-hidden="true" />
-          <span>{{ t('map.layers.shell.graticule') }}</span>
-          <span v-if="graticuleEnabled" class="map-layer-remove">
-            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
-          </span>
-        </button>
-        <button
-          v-for="option in maritimeOptions"
-          :key="option.id"
-          class="map-more-popup-item"
-          :class="{ active: maritimeLayerIds.has(option.id) }"
-          type="button"
-          role="menuitemcheckbox"
-          :aria-checked="maritimeLayerIds.has(option.id)"
-          :disabled="loadingMaritimeLayerId === option.id"
-          @click="toggleMaritimeLayer(option.id)"
-        >
-          <span class="map-layer-swatch" :style="{ background: option.color }"></span>
-          <span>{{ option.shortName }}</span>
-          <span v-if="maritimeLayerIds.has(option.id)" class="map-layer-remove">
-            <X :size="13" :stroke-width="2.2" aria-hidden="true" />
-          </span>
-        </button>
-      </div>
     </aside>
 
     <section v-if="meteoFeatureEnabled && (meteoQueryLoading || meteoQueryResult || meteoQueryError)" class="meteo-query-panel" aria-live="polite">
@@ -412,12 +417,20 @@ const props = withDefaults(defineProps<{
   turnEditAvailable?: boolean
   clearAvailable?: boolean
   pinAvailable?: boolean
+  /**
+   * Hides the bottom-right tool group (layers / measure distance / measure area).
+   * The budget map sets it: that screen only needs the top-right editing tools, and its
+   * bottom-right corner is covered by the sheet-style action area of the host page.
+   * The 航程计算 (distance) map keeps the default `false` and therefore its buttons.
+   */
+  hideBottomActions?: boolean
   errorMessage?: string | null
 }>(), {
   routeEditAvailable: true,
   turnEditAvailable: true,
   clearAvailable: true,
   pinAvailable: true,
+  hideBottomActions: false,
   errorMessage: null,
 })
 

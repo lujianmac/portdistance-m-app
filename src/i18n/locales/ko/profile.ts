@@ -71,6 +71,7 @@ export default {
     dateRange: '{start} ~ {end}',
     defaultPlan: 'PortDistance 서비스 구독',
     noActiveSubscription: '유효한 구독이 없습니다',
+    purchase: 'Purchase',
     paymentRecords: '결제 내역',
     empty: '구매 내역이 없습니다',
     orderNo: '주문번호 {no}',

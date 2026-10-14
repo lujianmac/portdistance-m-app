@@ -20,6 +20,7 @@
               <ion-note v-if="subscriptionNote">{{ subscriptionNote }}</ion-note>
             </div>
             <div v-else class="empty-copy">{{ t('profile.purchases.noActiveSubscription') }}</div>
+            <ion-button class="purchase-button" expand="block" fill="outline" @click="openQuotaExhaustedDialog('purchase')">{{ t('profile.purchases.purchase') }}</ion-button>
           </ion-card-content>
         </ion-card>
         <ion-card class="page-card">
@@ -45,6 +46,7 @@ import { useI18n } from 'vue-i18n'
 import AppBackButton from '@/components/AppBackButton.vue'
 import { getSubscriptionAndRecords, type PayRecord, type SubscriptionRecord } from '@/api/subscription'
 import { formatAmount, formatDate, formatDateTime } from '@/i18n/format'
+import { openQuotaExhaustedDialog } from '@/utils/quota'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -117,6 +119,9 @@ function channelName(channelId?: number) {
 
 <style scoped>
 .subscription-summary { display: grid; gap: 6px; }.subscription-summary small { color: #718294; font-size: 12px; }.subscription-summary strong { color: #173447; font-size: 16px; }.subscription-summary ion-note { font-size: 13px; }
+/* 「购买」按钮：有效期（或空态文案）下面一行，线框样式，与页面其它按钮一致；
+   ion-button 默认带 16px 左右外边距，这里清掉以对齐卡片内容。 */
+.purchase-button { margin: 12px 0 0; --border-color: #006c8c; --color: #006c8c; --border-radius: 8px; }
 /* 订单编号：原来是 <strong>（normalize 里 strong 为 bold，字号继承 16px），
    现在改成普通 span —— 不加粗，字号在 16px 基础上小 1px = 15px；
    下面「渠道 · 时间」那行 p 保持原样。 */
