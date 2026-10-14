@@ -133,7 +133,10 @@ const mapPorts = computed<Port[]>(() => props.ports.map((port) => ({
 const routePoints = computed(() => geometry.value.routePoints.flatMap((segment) => (
   Array.isArray(segment.route) ? segment.route : []
 )))
-const trackSegments = computed(() => [...geometry.value.routePaths, ...geometry.value.routePathsEca])
+const trackSegments = computed(() => [
+  ...geometry.value.routePaths.map((segment) => ({ ...segment, eca: false })),
+  ...geometry.value.routePathsEca.map((segment) => ({ ...segment, eca: true })),
+])
 const turningPoints = computed(() => geometry.value.turningPoints)
 const hasRoute = computed(() => trackSegments.value.length > 0)
 

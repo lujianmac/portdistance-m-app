@@ -115,7 +115,8 @@ interface ShareMetricView {
 }
 
 const BRAND_COLOR = '#006c8c'
-const ECA_COLOR = '#e66b45'
+/** ECA（排放控制区）航段：与主地图保持同一个深绿，见 routeLayerController.addTrackLine()。 */
+const ECA_COLOR = '#146c43'
 const DEFAULT_CENTER: [number, number] = [120, 30]
 const MINI_MAP_MAX_ZOOM = 7
 const CAPTURE_SCALE = 2

@@ -100,7 +100,10 @@ const turnPointEditor = ref<{
 })
 const ports = computed(() => distance.portPoints.map((row) => ({ portId: row.port.portId, portCode: row.port.portId, portName: row.port.portName, lon: Number(row.port.longitude), lat: Number(row.port.latitude), isCoordinate: row.port.isCoordinate, isWayPoint: row.port.isWayPoint })))
 const routePoints = computed(() => map.routePoints.flatMap((segment) => Array.isArray(segment.route) ? segment.route : []))
-const trackSegments = computed(() => [...map.routePaths, ...map.routePathsECA])
+const trackSegments = computed(() => [
+  ...map.routePaths.map((segment) => ({ ...segment, eca: false })),
+  ...map.routePathsECA.map((segment) => ({ ...segment, eca: true })),
+])
 const turningPoints = computed(() => map.turningPoints)
 
 function invalidateSize() {

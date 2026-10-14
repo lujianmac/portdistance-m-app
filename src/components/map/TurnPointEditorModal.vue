@@ -8,12 +8,12 @@
 
       <div class="turn-editor-body">
         <label class="turn-editor-field">
-          {{ t('map.core.turnPoint.longitude') }}
-          <input v-model="localLongitude" type="number" inputmode="decimal" min="-180" max="180" step="0.000001" />
-        </label>
-        <label class="turn-editor-field">
           {{ t('map.core.turnPoint.latitude') }}
           <input v-model="localLatitude" type="number" inputmode="decimal" min="-90" max="90" step="0.000001" />
+        </label>
+        <label class="turn-editor-field">
+          {{ t('map.core.turnPoint.longitude') }}
+          <input v-model="localLongitude" type="number" inputmode="decimal" min="-180" max="180" step="0.000001" />
         </label>
         <p v-if="!canConfirm" class="turn-editor-error">{{ t('map.core.turnPoint.invalidCoordinate') }}</p>
       </div>

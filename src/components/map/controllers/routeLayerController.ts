@@ -274,7 +274,7 @@ export class RouteLayerController {
         previousLongitude = unwrapped.endLongitude ?? previousLongitude
         if (unwrapped.latLngs.length < 2) return
         allLatLngs.push(...unwrapped.latLngs)
-        this.addTrackLine(unwrapped.latLngs, calcSegmentDistanceNm(segment), segment.idArr)
+        this.addTrackLine(unwrapped.latLngs, calcSegmentDistanceNm(segment), segment.idArr, Boolean(segment.eca))
       })
     } else if (this.routePoints.length >= 2) {
       const points = this.routePoints.map((point) => this.coordinates.toDisplayCoordinate(Number(point.lon), Number(point.lat)))
@@ -292,10 +292,17 @@ export class RouteLayerController {
     this.renderTurnPointGraphics()
   }
 
-  private addTrackLine(latLngs: L.LatLngExpression[], distanceNm: number, idArr: Array<number | string>): void {
+  private addTrackLine(latLngs: L.LatLngExpression[], distanceNm: number, idArr: Array<number | string>, eca = false): void {
+    /*
+     * ECA（排放控制区）内的航段单独用深绿色，与普通航段的深红区分。
+     * 分组是现成的：produceTrackPath() 已按 ECA 多边形把航线拆成 routePaths /
+     * routePathsECA 两组，并在出入边界处插入了与多边形的交点，所以这里只按
+     * segment.eca 上色，地图侧不需要再做任何几何判断，边界精度就是数据本身的精度。
+     */
+    const lineColor = eca ? '#146c43' : '#a1443b'
     const line = L.polyline(latLngs, {
       pane: this.panes.route,
-      color: '#a1443b',
+      color: lineColor,
       weight: 2,
       opacity: 1,
       lineCap: 'round',
@@ -312,7 +319,7 @@ export class RouteLayerController {
      */
     const hitLine = L.polyline(latLngs, {
       pane: this.panes.route,
-      color: '#a1443b',
+      color: lineColor,
       weight: 24,
       opacity: 0,
       lineCap: 'round',

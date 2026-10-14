@@ -51,7 +51,8 @@ const COLOR = {
   muted: '#6e8192',
   line: '#dce6ef',
   soft: '#f5f9fb',
-  accent: '#e66b45',
+  /** ECA（排放控制区）航段：与主地图、分享弹窗迷你地图统一用同一个深绿。 */
+  eca: '#146c43',
 } as const
 
 const FONT_STACK = '"PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif'
@@ -187,7 +188,7 @@ export function drawShareCard(input: ShareCardInput): string {
 
     const ecaSegments = (input.ecaSegments ?? []).filter((segment) => Array.isArray(segment) && segment.length >= 2)
     strokePolylines(segments, COLOR.brand, 7)
-    if (ecaSegments.length) strokePolylines(ecaSegments, COLOR.accent, 7)
+    if (ecaSegments.length) strokePolylines(ecaSegments, COLOR.eca, 7)
 
     // ports: dot + short label
     context.font = font(600, 26)

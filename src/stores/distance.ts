@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { getDistanceRoute, getSuggestPortList } from '@/api/distance'
+import { formatCoordinateLabel } from '@/components/map/core/coordinates'
 import { DEFAULT_SPEED } from '@/config/runtime'
 import { t } from '@/i18n'
 import { useMapStore } from '@/stores/map'
@@ -160,7 +161,9 @@ export const useDistanceStore = defineStore('distance', () => {
   }
 
   function addCoordinatePort(latitude: number, longitude: number, name?: string) {
-    const label = name?.trim() || `${longitude.toFixed(4)}, ${latitude.toFixed(4)}`
+    // 显示文本统一走地图那套「纬度在前 + 半球字母」格式（24.500°N / 118.100°E），
+    // 和标点气泡、点查信息框一致；请求用的 portId 仍是原始的 `${经度}~${纬度}`，不受影响。
+    const label = name?.trim() || formatCoordinateLabel(longitude, latitude)
     addPort({
       portId: `${longitude}~${latitude}`,
       portName: label,

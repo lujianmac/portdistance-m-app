@@ -190,7 +190,8 @@
 }
 
 .measure-label,
-.measure-total-label {
+.measure-total-label,
+.measure-point-label {
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -207,12 +208,21 @@
     1px 1px 0 #ffffff;
 }
 
+/* 总里程：比线段标签大半号 */
 .measure-total-label {
-  font-size: 15px;
+  font-size: 14px;
+}
+
+/* 标点自身的经纬度：小一号、颜色略淡，压在圆点正上方 */
+.measure-point-label {
+  color: #2c4a63;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .measure-label::before,
-.measure-total-label::before {
+.measure-total-label::before,
+.measure-point-label::before {
   display: none;
 }
 

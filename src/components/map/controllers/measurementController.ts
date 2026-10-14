@@ -4,9 +4,12 @@ import turfBearing from '@turf/bearing'
 import turfDistance from '@turf/distance'
 import { point, polygon } from '@turf/helpers'
 import { t } from '@/i18n'
-import { canonicalLongitude, nearestWrappedLongitude, unwrapCoordinates } from '@/components/map/core/coordinates'
+import { canonicalLongitude, formatCoordinateLabel, nearestWrappedLongitude, unwrapCoordinates } from '@/components/map/core/coordinates'
 import { escapeHtml } from '@/components/map/core/html'
 import type { MapCoordinates, MeasureMode } from '@/components/map/controllers/types'
+
+/** 量距标签的三种角色，见 addLabel()。 */
+type MeasureLabelKind = 'segment' | 'total' | 'point'
 
 interface MeasurementControllerOptions {
   map: L.Map
@@ -141,16 +144,27 @@ export class MeasurementController {
     this.notifyChange()
   }
 
-  private addLabel(position: L.LatLngExpression, text: string, total = false): void {
+  /**
+   * 三段式标签：
+   *   segment —— 线段中点的「距离 + 方位」，13px 加粗；
+   *   total   —— 终点上的「总距离」，比 segment 大半号（15px→现 14px）；
+   *   point   —— 标点自身的经纬度，小一号、压在点的正上方，避免挡住圆点。
+   */
+  private addLabel(position: L.LatLngExpression, text: string, kind: MeasureLabelKind = 'segment'): void {
+    const layout = kind === 'total'
+      ? { className: 'measure-total-label', size: [210, 24] as [number, number], anchor: [105, 12] as [number, number] }
+      : kind === 'point'
+        ? { className: 'measure-point-label', size: [170, 18] as [number, number], anchor: [85, 28] as [number, number] }
+        : { className: 'measure-label', size: [150, 22] as [number, number], anchor: [75, 11] as [number, number] }
     L.marker(position, {
       pane: this.pane,
       interactive: false,
       keyboard: false,
       icon: L.divIcon({
-        className: total ? 'measure-total-label' : 'measure-label',
+        className: layout.className,
         html: `<span>${escapeHtml(text)}</span>`,
-        iconSize: total ? [210, 24] : [150, 22],
-        iconAnchor: total ? [105, 12] : [75, 11],
+        iconSize: layout.size,
+        iconAnchor: layout.anchor,
       }),
     }).addTo(this.layer)
   }
@@ -185,7 +199,7 @@ export class MeasurementController {
       L.polyline(displayPath, lineOptions).addTo(this.layer)
     }
 
-    this.points.forEach(([longitude, latitude]) => {
+    this.points.forEach(([longitude, latitude], index) => {
       L.marker(this.coordinates.toDisplayLatLng(longitude, latitude), {
         pane: this.pane,
         interactive: false,
@@ -197,6 +211,13 @@ export class MeasurementController {
           iconAnchor: [8, 8],
         }),
       }).addTo(this.layer)
+      // 每个标点自己的经纬度，压在圆点正上方（图标锚点比圆点高 10px）。
+      // 用显示坐标定位、业务坐标取值：跨 ±180° 时显示位置被解开、文本仍是规范经度。
+      // 只在「量距」下显示：量面积时顶点多、标签会盖住图形。
+      if (this.mode === 'distance') {
+        const pointLabelPosition = displayPath[index] ? L.latLng(displayPath[index]) : L.latLng(latitude, longitude)
+        this.addLabel(pointLabelPosition, formatCoordinateLabel(longitude, latitude), 'point')
+      }
     })
 
     let totalDistance = 0
@@ -219,7 +240,7 @@ export class MeasurementController {
       this.addLabel(
         L.latLng(displayPath[displayPath.length - 1]),
         t('map.layers.shell.totalDistanceLabel', { value: formatDistance(totalDistance) }),
-        true,
+        'total',
       )
     }
 
@@ -242,7 +263,7 @@ export class MeasurementController {
           nm: squareNauticalMiles.toFixed(2),
           km: squareKilometers.toFixed(2),
         }),
-        true,
+        'total',
       )
     }
   }

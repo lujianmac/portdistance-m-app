@@ -7,6 +7,12 @@ export interface RoutePathItem {
   distance: string
   route: number[][]
   idArr: Array<number | string>
+  /**
+   * 这一段是否落在 ECA（排放控制区）里。
+   * `produceTrackPath()` 会把航线拆成 routePaths / routePathsECA 两组，边界处已插入与
+   * ECA 多边形的交点，所以合并回一个数组时用这个标记保留分组，供地图分段上色。
+   */
+  eca?: boolean
 }
 
 export interface TrackSegmentsResult {

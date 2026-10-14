@@ -305,7 +305,7 @@
             <section v-if="distance.hasDistanceResult" class="share-panel">
               <div class="share-toolbar">
                 <ion-button fill="clear" @click="copyResult">{{ t('distance.share.copyResult') }}</ion-button>
-                <ion-button fill="clear" @click="router.push('/tabs/map')">{{ t('distance.share.viewMap') }}</ion-button>
+                <ion-button fill="clear" class="view-map-action" @click="router.push('/tabs/map')">{{ t('distance.share.viewMap') }}</ion-button>
                 <ion-button fill="clear" @click="shareOpen = true">{{ t('common.share') }}</ion-button>
               </div>
               <ion-button expand="block" class="budget-action" @click="createBudget">
@@ -357,17 +357,6 @@
           <ion-list lines="full" class="coordinate-fields">
             <ion-item>
               <ion-input
-                :value="coordinate.longitude"
-                :label="t('distance.coordinate.longitude')"
-                label-placement="floating"
-                type="number"
-                inputmode="decimal"
-                :placeholder="t('distance.coordinate.longitudePlaceholder')"
-                @ion-input="updateDecimal('longitude', $event)"
-              />
-            </ion-item>
-            <ion-item>
-              <ion-input
                 :value="coordinate.latitude"
                 :label="t('distance.coordinate.latitude')"
                 label-placement="floating"
@@ -377,63 +366,23 @@
                 @ion-input="updateDecimal('latitude', $event)"
               />
             </ion-item>
+            <ion-item>
+              <ion-input
+                :value="coordinate.longitude"
+                :label="t('distance.coordinate.longitude')"
+                label-placement="floating"
+                type="number"
+                inputmode="decimal"
+                :placeholder="t('distance.coordinate.longitudePlaceholder')"
+                @ion-input="updateDecimal('longitude', $event)"
+              />
+            </ion-item>
           </ion-list>
         </section>
 
         <section class="coordinate-section">
           <h2 class="coordinate-section-title">{{ t('distance.coordinate.modeDms') }}</h2>
           <ion-list lines="full" class="coordinate-fields">
-            <h3 class="dms-axis">{{ t('distance.coordinate.longitude') }}</h3>
-            <div class="dms-row">
-              <ion-item>
-                <ion-input
-                  :value="dms.longitude.degree"
-                  :label="t('distance.coordinate.degree')"
-                  label-placement="floating"
-                  type="number"
-                  inputmode="numeric"
-                  :placeholder="t('distance.coordinate.longitudeDegreePlaceholder')"
-                  @ion-input="updateDms('longitude', 'degree', $event)"
-                />
-              </ion-item>
-              <ion-item>
-                <ion-input
-                  :value="dms.longitude.minute"
-                  :label="t('distance.coordinate.minute')"
-                  label-placement="floating"
-                  type="number"
-                  inputmode="numeric"
-                  :placeholder="t('distance.coordinate.minutePlaceholder')"
-                  @ion-input="updateDms('longitude', 'minute', $event)"
-                />
-              </ion-item>
-              <ion-item>
-                <ion-input
-                  :value="dms.longitude.second"
-                  :label="t('distance.coordinate.second')"
-                  label-placement="floating"
-                  type="number"
-                  inputmode="numeric"
-                  :placeholder="t('distance.coordinate.secondPlaceholder')"
-                  @ion-input="updateDms('longitude', 'second', $event)"
-                />
-              </ion-item>
-              <ion-item>
-                <ion-select
-                  :value="dms.longitude.direction"
-                  :label="t('distance.coordinate.direction')"
-                  label-placement="floating"
-                  interface="popover"
-                  :ok-text="t('common.ok')"
-                  :cancel-text="t('common.cancel')"
-                  @ion-change="updateDirection('longitude', $event)"
-                >
-                  <ion-select-option value="east">{{ t('distance.coordinate.east') }}</ion-select-option>
-                  <ion-select-option value="west">{{ t('distance.coordinate.west') }}</ion-select-option>
-                </ion-select>
-              </ion-item>
-            </div>
-
             <h3 class="dms-axis">{{ t('distance.coordinate.latitude') }}</h3>
             <div class="dms-row">
               <ion-item>
@@ -481,6 +430,57 @@
                 >
                   <ion-select-option value="north">{{ t('distance.coordinate.north') }}</ion-select-option>
                   <ion-select-option value="south">{{ t('distance.coordinate.south') }}</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </div>
+
+            <h3 class="dms-axis">{{ t('distance.coordinate.longitude') }}</h3>
+            <div class="dms-row">
+              <ion-item>
+                <ion-input
+                  :value="dms.longitude.degree"
+                  :label="t('distance.coordinate.degree')"
+                  label-placement="floating"
+                  type="number"
+                  inputmode="numeric"
+                  :placeholder="t('distance.coordinate.longitudeDegreePlaceholder')"
+                  @ion-input="updateDms('longitude', 'degree', $event)"
+                />
+              </ion-item>
+              <ion-item>
+                <ion-input
+                  :value="dms.longitude.minute"
+                  :label="t('distance.coordinate.minute')"
+                  label-placement="floating"
+                  type="number"
+                  inputmode="numeric"
+                  :placeholder="t('distance.coordinate.minutePlaceholder')"
+                  @ion-input="updateDms('longitude', 'minute', $event)"
+                />
+              </ion-item>
+              <ion-item>
+                <ion-input
+                  :value="dms.longitude.second"
+                  :label="t('distance.coordinate.second')"
+                  label-placement="floating"
+                  type="number"
+                  inputmode="numeric"
+                  :placeholder="t('distance.coordinate.secondPlaceholder')"
+                  @ion-input="updateDms('longitude', 'second', $event)"
+                />
+              </ion-item>
+              <ion-item>
+                <ion-select
+                  :value="dms.longitude.direction"
+                  :label="t('distance.coordinate.direction')"
+                  label-placement="floating"
+                  interface="popover"
+                  :ok-text="t('common.ok')"
+                  :cancel-text="t('common.cancel')"
+                  @ion-change="updateDirection('longitude', $event)"
+                >
+                  <ion-select-option value="east">{{ t('distance.coordinate.east') }}</ion-select-option>
+                  <ion-select-option value="west">{{ t('distance.coordinate.west') }}</ion-select-option>
                 </ion-select>
               </ion-item>
             </div>
@@ -1279,7 +1279,7 @@ async function presentToast(message: string) {
 .suggest-label {
   overflow: hidden;
   color: #243748;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1480,7 +1480,7 @@ async function presentToast(message: string) {
   display: block;
   overflow: hidden;
   color: #243748;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1490,7 +1490,7 @@ async function presentToast(message: string) {
   margin-left: 3px;
   /* 比港口名浅一档，但仍能读清（原 #6e8192 偏淡） */
   color: #54697a;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
 }
 
@@ -1766,8 +1766,13 @@ async function presentToast(message: string) {
   --color: #275b80;
   --padding-start: 2px;
   --padding-end: 2px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
+}
+
+/* 「查看地图」单独用深绿，和另外两个动作拉开区分 */
+.share-toolbar ion-button.view-map-action {
+  --color: #146c43;
 }
 
 .budget-action {

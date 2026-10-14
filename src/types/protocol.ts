@@ -12,6 +12,8 @@ export interface RoutePathItem {
   distance: string
   route: number[][]
   idArr: Array<number | string>
+  /** 该航段是否在 ECA（排放控制区）内：合并 routePaths / routePathsECA 时打标，地图据此分段上色。 */
+  eca?: boolean
 }
 
 export interface DistanceResultPort extends Port {
