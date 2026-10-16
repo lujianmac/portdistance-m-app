@@ -62,21 +62,21 @@
             </div>
             <h3>{{ t('budget.editor.fuel.dailyHeading') }}</h3>
             <div class="field-grid two-column fuel-grid">
-              <ion-item lines="full"><ion-input :value="numberText(store.document.fuel.seaLadenFuel)" :label="t('budget.editor.fuel.seaLadenFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaLadenFuel', $event)" /></ion-item>
-              <ion-item lines="full"><ion-input :value="numberText(store.document.fuel.seaBallastFuel)" :label="t('budget.editor.fuel.seaBallastFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaBallastFuel', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.fuel.seaLadenFuel)" :label="t('budget.editor.fuel.seaLadenFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateFuel('seaLadenFuel', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.fuel.seaBallastFuel)" :label="t('budget.editor.fuel.seaBallastFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateFuel('seaBallastFuel', $event)" /></ion-item>
               <div class="field-tip fuel-tip">{{ t('budget.editor.fuel.ecaNote') }}</div>
-              <ion-item lines="full" class="fuel-aux-item"><ion-input :value="numberText(store.document.fuel.seaAuxFuel)" :label="t('budget.editor.fuel.seaAuxFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('seaAuxFuel', $event)" /></ion-item>
+              <ion-item lines="full" class="fuel-aux-item"><ion-input v-number-draft :value="numberText(store.document.fuel.seaAuxFuel)" :label="t('budget.editor.fuel.seaAuxFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateFuel('seaAuxFuel', $event)" /></ion-item>
             </div>
             <div class="field-grid two-column fuel-port-grid">
-              <ion-item lines="full"><ion-input :value="numberText(store.document.fuel.portIdleFuel)" :label="t('budget.editor.fuel.portIdleFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portIdleFuel', $event)" /></ion-item>
-              <ion-item lines="full"><ion-input :value="numberText(store.document.fuel.portWorkingFuel)" :label="t('budget.editor.fuel.portWorkingFuel')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateFuel('portWorkingFuel', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.fuel.portIdleFuel)" :label="t('budget.editor.fuel.portIdleFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateFuel('portIdleFuel', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.fuel.portWorkingFuel)" :label="t('budget.editor.fuel.portWorkingFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateFuel('portWorkingFuel', $event)" /></ion-item>
             </div>
             <h3>{{ t('budget.editor.fuel.speedHeading') }}</h3>
             <div class="field-grid speed-grid">
-              <ion-item lines="full"><ion-input :value="numberText(store.document.speeds.ballastFullSpeed)" :label="t('budget.editor.fuel.ballastFullSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastFullSpeed', $event)" /></ion-item>
-              <ion-item lines="full"><ion-input :value="numberText(store.document.speeds.ballastEcoSpeed)" :label="t('budget.editor.fuel.ballastEcoSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ballastEcoSpeed', $event)" /></ion-item>
-              <ion-item lines="full"><ion-input :value="numberText(store.document.speeds.ladenFullSpeed)" :label="t('budget.editor.fuel.ladenFullSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenFullSpeed', $event)" /></ion-item>
-              <ion-item lines="full"><ion-input :value="numberText(store.document.speeds.ladenEcoSpeed)" :label="t('budget.editor.fuel.ladenEcoSpeed')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateSpeed('ladenEcoSpeed', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input data-speed-field="ballastFullSpeed" :value="speedFieldText('ballastFullSpeed')" :label="t('budget.editor.fuel.ballastFullSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateSpeed('ballastFullSpeed', $event)" @ion-blur="normalizeSpeed('ballastFullSpeed', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input data-speed-field="ballastEcoSpeed" :value="speedFieldText('ballastEcoSpeed')" :label="t('budget.editor.fuel.ballastEcoSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateSpeed('ballastEcoSpeed', $event)" @ion-blur="normalizeSpeed('ballastEcoSpeed', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input data-speed-field="ladenFullSpeed" :value="speedFieldText('ladenFullSpeed')" :label="t('budget.editor.fuel.ladenFullSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateSpeed('ladenFullSpeed', $event)" @ion-blur="normalizeSpeed('ladenFullSpeed', $event)" /></ion-item>
+              <ion-item lines="full"><ion-input data-speed-field="ladenEcoSpeed" :value="speedFieldText('ladenEcoSpeed')" :label="t('budget.editor.fuel.ladenEcoSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateSpeed('ladenEcoSpeed', $event)" @ion-blur="normalizeSpeed('ladenEcoSpeed', $event)" /></ion-item>
             </div>
             <!-- Saving / editing a fuel template has exactly one entry point per state:
                  - no template selected -> "template name + set as template", and the button needs
@@ -148,9 +148,9 @@
                 </div>
 
                 <div v-if="!isRoutingPort(port)" class="field-grid port-operation-grid">
-                  <ion-item lines="full"><ion-input :value="numberText(port.idleDays)" :label="t('budget.editor.ports.idleDays')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'idleDays', $event)" /></ion-item>
-                  <ion-item lines="full"><ion-input :value="numberText(port.workDays)" :label="t('budget.editor.ports.workDays')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'workDays', $event)" /></ion-item>
-                  <ion-item lines="full"><ion-input :value="numberText(port.portCharge)" :label="t('budget.editor.ports.portCharge')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'portCharge', $event)" /></ion-item>
+                  <ion-item lines="full"><ion-input v-number-draft :value="numberText(port.idleDays)" :label="t('budget.editor.ports.idleDays')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePortNumber(index, 'idleDays', $event)" /></ion-item>
+                  <ion-item lines="full"><ion-input v-number-draft :value="numberText(port.workDays)" :label="t('budget.editor.ports.workDays')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePortNumber(index, 'workDays', $event)" /></ion-item>
+                  <ion-item lines="full"><ion-input v-number-draft :value="numberText(port.portCharge)" :label="t('budget.editor.ports.portCharge')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePortNumber(index, 'portCharge', $event)" /></ion-item>
                 </div>
 
                 <div v-if="!isRoutingPort(port)" class="schedule-times">
@@ -180,7 +180,7 @@
                   <!-- Custom margin: the value input comes first, the percent/days mode is a switch next to it. -->
                   <div v-if="weatherPreset(port) === 'custom'" class="weather-custom-row">
                     <!-- Percent mode shows the same non-editable "%" unit as the overall-margin rows. -->
-                    <ion-item lines="full"><ion-input :value="numberText(port.weatherMarginValue)" :label="t('budget.editor.ports.weatherValue')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePortNumber(index, 'weatherMarginValue', $event)" /><span v-if="port.weatherMarginMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
+                    <ion-item lines="full"><ion-input v-number-draft :value="numberText(port.weatherMarginValue)" :label="t('budget.editor.ports.weatherValue')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePortNumber(index, 'weatherMarginValue', $event)" /><span v-if="port.weatherMarginMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
                     <ion-segment :value="port.weatherMarginMode" @ion-change="updateWeatherMode(index, $event)">
                       <ion-segment-button value="percent"><ion-label>{{ t('budget.editor.ports.weatherPercent') }}</ion-label></ion-segment-button>
                       <ion-segment-button value="days"><ion-label>{{ t('budget.editor.ports.weatherDays') }}</ion-label></ion-segment-button>
@@ -204,14 +204,14 @@
                   <ion-item lines="full"><ion-select :value="store.document.margins.portIdleMode" :aria-label="t('budget.editor.ports.idleMargin')" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portIdleMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
                   <!-- Percent mode shows a plain "%" unit next to the value: a non-editable span,
                        same construction as the commission rows of the cargo sheet. -->
-                  <ion-item lines="full"><ion-input :key="`idle-value-${store.document.margins.portIdleMode}`" :value="numberText(store.document.margins.portIdleValue)" :aria-label="store.document.margins.portIdleMode === 'percent' ? t('budget.editor.ports.idleMarginPercent') : t('budget.editor.ports.idleMarginDays')" type="number" inputmode="decimal" @ion-input="updateMarginValue('portIdleValue', $event)" /><span v-if="store.document.margins.portIdleMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
+                  <ion-item lines="full"><ion-input :key="`idle-value-${store.document.margins.portIdleMode}`" v-number-draft :value="numberText(store.document.margins.portIdleValue)" :aria-label="store.document.margins.portIdleMode === 'percent' ? t('budget.editor.ports.idleMarginPercent') : t('budget.editor.ports.idleMarginDays')" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateMarginValue('portIdleValue', $event)" /><span v-if="store.document.margins.portIdleMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
                 </div>
               </div>
               <div class="overall-group" role="group" :aria-label="t('budget.editor.ports.workingMargin')">
                 <span class="overall-group-title">{{ t('budget.editor.ports.workingMargin') }}</span>
                 <div class="field-grid overall-grid">
                   <ion-item lines="full"><ion-select :value="store.document.margins.portWorkingMode" :aria-label="t('budget.editor.ports.workingMargin')" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateMarginMode('portWorkingMode', $event)"><ion-select-option value="days">{{ t('budget.editor.ports.weatherDays') }}</ion-select-option><ion-select-option value="percent">{{ t('budget.editor.ports.weatherPercent') }}</ion-select-option></ion-select></ion-item>
-                  <ion-item lines="full"><ion-input :key="`working-value-${store.document.margins.portWorkingMode}`" :value="numberText(store.document.margins.portWorkingValue)" :aria-label="store.document.margins.portWorkingMode === 'percent' ? t('budget.editor.ports.workingMarginPercent') : t('budget.editor.ports.workingMarginDays')" type="number" inputmode="decimal" @ion-input="updateMarginValue('portWorkingValue', $event)" /><span v-if="store.document.margins.portWorkingMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
+                  <ion-item lines="full"><ion-input :key="`working-value-${store.document.margins.portWorkingMode}`" v-number-draft :value="numberText(store.document.margins.portWorkingValue)" :aria-label="store.document.margins.portWorkingMode === 'percent' ? t('budget.editor.ports.workingMarginPercent') : t('budget.editor.ports.workingMarginDays')" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateMarginValue('portWorkingValue', $event)" /><span v-if="store.document.margins.portWorkingMode === 'percent'" class="field-unit margin-unit">%</span></ion-item>
                 </div>
               </div>
               </div>
@@ -287,7 +287,7 @@
           <section class="editor-section" aria-labelledby="prices-heading">
             <div class="section-heading"><h2 id="prices-heading">{{ t('budget.editor.prices.heading') }}</h2></div>
             <div class="price-heading"><h3>{{ t('budget.editor.prices.unitPrice') }}</h3><ion-segment :value="mainFuelType" @ion-change="setMainFuelType"><ion-segment-button value="LSFO"><ion-label>LSFO</ion-label></ion-segment-button><ion-segment-button value="HSFO"><ion-label>HSFO</ion-label></ion-segment-button></ion-segment></div>
-            <div class="field-grid two-column"><ion-item lines="full"><ion-input :value="numberText(mainFuelPrice)" :label="mainFuelType" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice(mainFuelPriceField, $event)" /></ion-item><ion-item lines="full"><ion-input :value="numberText(store.document.prices.mgoPrice)" label="LSDO/MGO" label-placement="floating" type="number" inputmode="decimal" @ion-input="updatePrice('mgoPrice', $event)" /></ion-item></div>
+            <div class="field-grid two-column"><ion-item lines="full"><ion-input v-number-draft :value="numberText(mainFuelPrice)" :label="mainFuelType" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePrice(mainFuelPriceField, $event)" /></ion-item><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.prices.mgoPrice)" label="LSDO/MGO" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updatePrice('mgoPrice', $event)" /></ion-item></div>
             <small class="section-note">{{ t('budget.editor.prices.defaultNote') }}</small>
             <div v-if="store.hasCalculatedRoute" class="fuel-cost-summary"><h3>{{ t('budget.editor.prices.fuelCostHeading') }}</h3><div><span>{{ t('budget.editor.prices.mainFuelCost', { name: mainFuelType }) }}</span><strong>{{ amount(store.document.results.nonEcaFuelCost) }}</strong><small>{{ t('budget.editor.prices.mainFuelFormula', { name: mainFuelType, fuel: amount(store.document.results.seaMainFuel), price: amount(mainFuelPrice), cost: amount(store.document.results.nonEcaFuelCost) }) }}</small></div><div><span>{{ t('budget.editor.prices.mgoFuelCost') }}</span><strong>{{ amount(mgoFuelCost) }}</strong><small>{{ t('budget.editor.prices.mgoFuelCostFormula', { eca: amount(store.document.results.ecaMainFuel), aux: amount(store.document.results.seaAuxFuel), port: amount(store.document.results.portFuel), price: amount(store.document.prices.mgoPrice), cost: amount(mgoFuelCost) }) }}</small></div><p>{{ t('budget.editor.prices.fuelCostTotalFormula', { name: mainFuelType, main: amount(store.document.results.nonEcaFuelCost), mgo: amount(mgoFuelCost), total: amount(store.document.results.totalFuelCost) }) }}</p></div>
           </section>
@@ -295,16 +295,16 @@
           <section class="editor-section" aria-labelledby="cost-heading">
             <div class="section-heading"><h2 id="cost-heading">{{ t('budget.editor.costs.heading') }}</h2><span>{{ t('budget.editor.costs.autoSummary') }}</span></div>
             <div class="cost-readonly"><span>{{ t('budget.editor.costs.fuelCost') }}</span><strong>{{ amount(store.document.results.totalFuelCost) }}</strong><span>{{ t('budget.editor.costs.portCharge') }}</span><strong>{{ amount(store.document.results.totalPortCharge) }}</strong></div>
-            <div class="field-grid two-column"><ion-item lines="full"><ion-input :value="numberText(store.document.costs.ilohc)" :label="t('budget.editor.costs.holdCleaning')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('ilohc', $event)" /></ion-item><ion-item lines="full"><ion-input :value="numberText(store.document.costs.cev)" :label="t('budget.editor.costs.cev')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('cev', $event)" /></ion-item><ion-item lines="full"><ion-input :value="numberText(store.document.costs.inspection)" :label="t('budget.editor.costs.inspection')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('inspection', $event)" /></ion-item><ion-item lines="full"><ion-input :value="numberText(store.document.costs.opOther)" :label="t('budget.editor.costs.opOther')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('opOther', $event)" /></ion-item></div>
+            <div class="field-grid two-column"><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.ilohc)" :label="t('budget.editor.costs.holdCleaning')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('ilohc', $event)" /></ion-item><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.cev)" :label="t('budget.editor.costs.cev')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('cev', $event)" /></ion-item><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.inspection)" :label="t('budget.editor.costs.inspection')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('inspection', $event)" /></ion-item><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.opOther)" :label="t('budget.editor.costs.opOther')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('opOther', $event)" /></ion-item></div>
             <div class="cost-calculation-group">
-              <div class="field-grid two-column"><ion-item lines="full"><ion-input :value="numberText(store.document.costs.hirePerDay)" :label="t('budget.editor.costs.hirePerDay')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('hirePerDay', $event)" /></ion-item><div class="cost-group-value"><span>{{ t('budget.editor.costs.hireLabel') }}</span><strong>{{ amount(hireAmount) }}</strong></div></div>
+              <div class="field-grid two-column"><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.hirePerDay)" :label="t('budget.editor.costs.hirePerDay')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('hirePerDay', $event)" /></ion-item><div class="cost-group-value"><span>{{ t('budget.editor.costs.hireLabel') }}</span><strong>{{ amount(hireAmount) }}</strong></div></div>
               <small class="cost-formula-hint">{{ t('budget.editor.costs.hireFormula', { hirePerDay: amount(store.document.costs.hirePerDay), days: amount(store.document.results.totalVoyageDays), hire: amount(hireAmount) }) }}</small>
             </div>
             <div class="cost-calculation-group">
-              <div class="field-grid two-column"><ion-item lines="full"><ion-input :value="numberText(store.document.costs.hireCommPercent)" :label="t('budget.editor.costs.hireCommPercent')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('hireCommPercent', $event)" /></ion-item><div class="cost-group-value"><span>{{ t('budget.editor.costs.hireCostLabel') }}</span><strong>{{ amount(hireCost) }}</strong></div></div>
+              <div class="field-grid two-column"><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.hireCommPercent)" :label="t('budget.editor.costs.hireCommPercent')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('hireCommPercent', $event)" /></ion-item><div class="cost-group-value"><span>{{ t('budget.editor.costs.hireCostLabel') }}</span><strong>{{ amount(hireCost) }}</strong></div></div>
               <small class="cost-formula-hint">{{ t('budget.editor.costs.hireCostFormula', { hire: amount(hireAmount), commission: amount(store.document.costs.hireCommPercent), hireCost: amount(hireCost) }) }}</small>
             </div>
-            <div class="field-grid two-column cost-fixed-grid"><ion-item lines="full"><ion-input :value="numberText(store.document.costs.fixedCost)" :label="t('budget.editor.costs.fixedCost')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCost('fixedCost', $event)" /></ion-item></div>
+            <div class="field-grid two-column cost-fixed-grid"><ion-item lines="full"><ion-input v-number-draft :value="numberText(store.document.costs.fixedCost)" :label="t('budget.editor.costs.fixedCost')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCost('fixedCost', $event)" /></ion-item></div>
           </section>
 
           <section class="editor-section result-section" aria-labelledby="result-heading">
@@ -381,27 +381,27 @@
             <ion-item lines="full"><ion-select :value="activeCargo.dischargePortId" :label="t('budget.editor.cargo.dischargePort')" label-placement="floating" interface="popover" :interface-options="selectInterfaceOptions" :ok-text="t('common.ok')" :cancel-text="t('common.cancel')" @ion-change="updateCargoText('dischargePortId', $event)"><ion-select-option v-for="port in cargoPorts" :key="port.id" :value="port.id">{{ port.port.portName }}</ion-select-option></ion-select></ion-item>
           </div>
           <div class="field-grid two-column modal-grid">
-            <ion-item lines="full"><ion-input :value="numberText(activeCargo.quantity)" :label="t('budget.editor.cargo.quantity')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('quantity', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(activeCargo.freight)" :label="t('budget.editor.cargo.freight')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('freight', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.quantity)" :label="t('budget.editor.cargo.quantity')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('quantity', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.freight)" :label="t('budget.editor.cargo.freight')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('freight', $event)" /></ion-item>
           </div>
           <div class="cargo-calculated"><span>{{ t('budget.editor.cargo.income') }}</span><strong>{{ amount(activeCargo.income) }}</strong></div>
           <div class="field-grid three-column modal-grid">
             <div class="charge-field">
-              <ion-item lines="full"><ion-input :value="numberText(activeCargo.addCommRate)" :label="t('budget.editor.cargo.addCommRate')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('addCommRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.addCommRate)" :label="t('budget.editor.cargo.addCommRate')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('addCommRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
               <div class="charge-calculated"><span>{{ t('budget.editor.cargo.addCommAmount') }}</span><strong>{{ amount(cargoCommission('addCommRate')) }}</strong></div>
             </div>
             <div class="charge-field">
-              <ion-item lines="full"><ion-input :value="numberText(activeCargo.brokerageRate)" :label="t('budget.editor.cargo.brokerageRate')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('brokerageRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.brokerageRate)" :label="t('budget.editor.cargo.brokerageRate')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('brokerageRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
               <div class="charge-calculated"><span>{{ t('budget.editor.cargo.brokerageAmount') }}</span><strong>{{ amount(cargoCommission('brokerageRate')) }}</strong></div>
             </div>
             <div class="charge-field">
-              <ion-item lines="full"><ion-input :value="numberText(activeCargo.frtTaxRate)" :label="t('budget.editor.cargo.taxRate')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('frtTaxRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
+              <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.frtTaxRate)" :label="t('budget.editor.cargo.taxRate')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('frtTaxRate', $event)" /><span class="field-unit">{{ t('common.unit.percent') }}</span></ion-item>
               <div class="charge-calculated"><span>{{ t('budget.editor.cargo.taxAmount') }}</span><strong>{{ amount(cargoCommission('frtTaxRate')) }}</strong></div>
             </div>
           </div>
           <div class="field-grid two-column modal-grid">
-            <ion-item lines="full"><ion-input :value="numberText(activeCargo.demurrage)" :label="t('budget.editor.cargo.demurrage')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('demurrage', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(activeCargo.dispatch)" :label="t('budget.editor.cargo.dispatch')" label-placement="floating" type="number" inputmode="decimal" @ion-input="updateCargoNumber('dispatch', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.demurrage)" :label="t('budget.editor.cargo.demurrage')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('demurrage', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(activeCargo.dispatch)" :label="t('budget.editor.cargo.dispatch')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateCargoNumber('dispatch', $event)" /></ion-item>
           </div>
         </template>
         <div class="modal-submit"><ion-button expand="block" @click="finishCargoEditor">{{ t('budget.editor.actions.confirm') }}</ion-button></div>
@@ -429,20 +429,20 @@
           </ion-list>
           <h3>{{ t('budget.editor.fuel.dailyHeading') }}</h3>
           <div class="field-grid two-column modal-grid">
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.seaLadenFuel)" :label="t('budget.editor.templates.seaLadenFuel')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('seaLadenFuel', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.seaBallastFuel)" :label="t('budget.editor.templates.seaBallastFuel')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('seaBallastFuel', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.seaAuxFuel)" :label="t('budget.editor.templates.seaAuxFuel')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('seaAuxFuel', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(templateDraft.seaLadenFuel)" :label="t('budget.editor.templates.seaLadenFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateNumber('seaLadenFuel', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(templateDraft.seaBallastFuel)" :label="t('budget.editor.templates.seaBallastFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateNumber('seaBallastFuel', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(templateDraft.seaAuxFuel)" :label="t('budget.editor.templates.seaAuxFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateNumber('seaAuxFuel', $event)" /></ion-item>
           </div>
           <div class="field-grid two-column modal-grid">
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.portIdleFuel)" :label="t('budget.editor.templates.portIdleFuel')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('portIdleFuel', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.portWorkingFuel)" :label="t('budget.editor.templates.portWorkingFuel')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('portWorkingFuel', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(templateDraft.portIdleFuel)" :label="t('budget.editor.templates.portIdleFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateNumber('portIdleFuel', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input v-number-draft :value="numberText(templateDraft.portWorkingFuel)" :label="t('budget.editor.templates.portWorkingFuel')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateNumber('portWorkingFuel', $event)" /></ion-item>
           </div>
           <h3>{{ t('budget.editor.fuel.speedHeading') }}</h3>
           <div class="field-grid speed-grid modal-grid">
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.ballastFullSpeed)" :label="t('budget.editor.templates.ballastFullSpeed')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('ballastFullSpeed', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.ballastEcoSpeed)" :label="t('budget.editor.templates.ballastEcoSpeed')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('ballastEcoSpeed', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.ladenFullSpeed)" :label="t('budget.editor.templates.ladenFullSpeed')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('ladenFullSpeed', $event)" /></ion-item>
-            <ion-item lines="full"><ion-input :value="numberText(templateDraft.ladenEcoSpeed)" :label="t('budget.editor.templates.ladenEcoSpeed')" label-placement="floating" type="number" @ion-input="updateTemplateNumber('ladenEcoSpeed', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input :value="templateSpeedFieldText('ballastFullSpeed')" :label="t('budget.editor.templates.ballastFullSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateSpeed('ballastFullSpeed', $event)" @ion-blur="normalizeTemplateSpeed('ballastFullSpeed', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input :value="templateSpeedFieldText('ballastEcoSpeed')" :label="t('budget.editor.templates.ballastEcoSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateSpeed('ballastEcoSpeed', $event)" @ion-blur="normalizeTemplateSpeed('ballastEcoSpeed', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input :value="templateSpeedFieldText('ladenFullSpeed')" :label="t('budget.editor.templates.ladenFullSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateSpeed('ladenFullSpeed', $event)" @ion-blur="normalizeTemplateSpeed('ladenFullSpeed', $event)" /></ion-item>
+            <ion-item lines="full"><ion-input :value="templateSpeedFieldText('ladenEcoSpeed')" :label="t('budget.editor.templates.ladenEcoSpeed')" label-placement="floating" type="number" enterkeyhint="done" inputmode="decimal" @ion-input="updateTemplateSpeed('ladenEcoSpeed', $event)" @ion-blur="normalizeTemplateSpeed('ladenEcoSpeed', $event)" /></ion-item>
           </div>
         </template>
         <!-- Empty template list: the same "new template" action as the toolbar "+" as a full-width
@@ -467,7 +467,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronLeft,
@@ -514,6 +514,7 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { getSuggestPortList } from '@/api/distance'
 import { DEFAULT_SPEED } from '@/config/runtime'
 import { formatAmount, formatDateTime } from '@/i18n/format'
+import { vNumberDraft } from '@/utils/number-input'
 import { portCountryCode, portCountryName } from '@/utils/port'
 import { mergePortSuggestions, portQueryVariants } from '@/utils/port-search'
 import { isQuotaExhaustedError } from '@/utils/quota'
@@ -833,12 +834,18 @@ onIonViewWillEnter(() => {
 
 onIonViewWillLeave(() => {
   removeEditorGuards()
+  // iOS 上数字键盘没有"完成"键、侧滑返回也不一定触发 blur：被清空但没失焦的航速框，
+  // 离开页面时按默认 12 节落库，否则草稿里留着的还是删之前那个值（例如 1）。
+  commitClearedSpeeds()
   if (!skipAutomaticDraft && !allowEditorExit && !childNavigation && store.hasUnsavedEditorState && !store.saving) {
     void store.saveLocalDraft().catch(() => undefined)
   }
 })
 
 onBeforeRouteLeave(async () => {
+  // 路由守卫一定会在离开前跑（onIonViewWillLeave 在某些入口下不保证），
+  // 此时页面 DOM 还在，正好把"清空但没失焦"的航速框按默认 12 节落库。
+  commitClearedSpeeds()
   if (allowEditorExit || childNavigation || skipAutomaticDraft || store.saving) return true
   // 右滑返回（iOS swipe-to-go-back）会先把当前页隐藏、把上一页显示出来，之后才跑路由守卫，
   // 此时一旦中止导航就会把 ion-router-outlet 卡在中间态（详见 gestureHidEditorPage 注释），
@@ -1061,8 +1068,73 @@ function updateFuel(field: FuelField, event: any) {
   store.updateFuel({ [field]: Math.max(0, numberOf(inputValue(event))) } as Partial<BudgetFuelInput>)
 }
 
+/**
+ * 航速框的本地显示文本。空态只存在于"屏幕上"，store 里永远是一个有效航速：
+ * 用户把内容删空、光标还停在框里（没失焦）的那一刻，store 已经被写成默认 12 节，
+ * 所以页面上的航行时间 / 油耗 / 费用立即按 12 计算，而不是继续用删之前那个旧值。
+ */
+const speedDraft = reactive<Record<string, string>>({})
+const templateSpeedDraft = reactive<Record<string, string>>({})
+
+function speedFieldText(field: keyof BudgetSpeedProfile) {
+  return speedDraft[field] ?? numberText(store.document.speeds[field])
+}
+
+function templateSpeedFieldText(field: TemplateNumberField) {
+  const draft = templateDraft.value
+  return templateSpeedDraft[field] ?? numberText(draft ? draft[field] : 0)
+}
+
+/** 航速输入：合法正数按用户输入记账；空 / 非法 / 0 一律按默认 12 节记账（框里保留空态供继续输入）。 */
 function updateSpeed(field: keyof BudgetSpeedProfile, event: any) {
-  store.updateSpeeds({ [field]: Math.max(0, numberOf(inputValue(event))) } as Partial<BudgetSpeedProfile>)
+  const raw = inputValue(event)
+  speedDraft[field] = raw
+  const parsed = Number(raw)
+  const usable = raw.trim() !== '' && Number.isFinite(parsed) && parsed > 0
+  store.updateSpeeds({ [field]: usable ? parsed : DEFAULT_SPEED } as Partial<BudgetSpeedProfile>)
+}
+
+/** 航速失焦：丢掉本地空态，显示回 store 里真正生效的值（清空过就是 12）。 */
+function normalizeSpeed(field: keyof BudgetSpeedProfile, event?: any) {
+  delete speedDraft[field]
+  const input = event?.target as { value?: unknown } | null | undefined
+  if (input) input.value = numberText(store.document.speeds[field])
+}
+
+/** 日油耗模板弹层里的航速框：同样的规则（空/0 → 12，且当场生效）。 */
+function updateTemplateSpeed(field: TemplateNumberField, event: any) {
+  const raw = inputValue(event)
+  templateSpeedDraft[field] = raw
+  const draft = templateDraft.value
+  if (!draft) return
+  const parsed = Number(raw)
+  const usable = raw.trim() !== '' && Number.isFinite(parsed) && parsed > 0
+  draft[field] = usable ? parsed : DEFAULT_SPEED
+}
+
+function normalizeTemplateSpeed(field: TemplateNumberField, event?: any) {
+  delete templateSpeedDraft[field]
+  const input = event?.target as { value?: unknown } | null | undefined
+  const draft = templateDraft.value
+  if (input && draft) input.value = numberText(draft[field])
+}
+
+/**
+ * 离开编辑页时的兜底：把"被清空但一直没失焦"的航速框按默认 12 节落库。
+ * 触发场景主要是 iOS —— 数字键盘没有"完成"键，用户删完直接用侧滑返回，
+ * 此时既没有 ionBlur 也没有 ionInput（空文本被指令拦住了），store 里会一直留着删之前的值。
+ */
+function commitClearedSpeeds() {
+  document.querySelectorAll<HTMLElement & { value?: unknown }>('[data-speed-field]').forEach((element) => {
+    const field = element.getAttribute('data-speed-field') as keyof BudgetSpeedProfile | null
+    if (!field) return
+    const text = String(element.value ?? '')
+    const usable = text.trim() !== '' && Number.isFinite(Number(text)) && Number(text) > 0
+    if (!usable) {
+      store.updateSpeeds({ [field]: DEFAULT_SPEED } as Partial<BudgetSpeedProfile>)
+      element.value = numberText(DEFAULT_SPEED)
+    }
+  })
 }
 
 /* ===== 日油耗模板：设为模板的门槛 + 已选模板的「已修改」判定（用户 1.1）=====
@@ -1187,7 +1259,17 @@ function updateTemplateName(event: any) {
 }
 
 function updateTemplateNumber(field: TemplateNumberField, event: any) {
-  if (templateDraft.value) templateDraft.value[field] = Math.max(0, numberOf(inputValue(event)))
+  if (!templateDraft.value) return
+  const parsed = Math.max(0, numberOf(inputValue(event)))
+  const isSpeed = String(field).endsWith('Speed')
+  // 模板里的航速同样不接受 0：直接收敛成默认 12 节（失焦时 normalizeTemplateSpeed 再兜一次底）
+  const applied = isSpeed && parsed <= 0 ? DEFAULT_SPEED : parsed
+  templateDraft.value[field] = applied
+  // 同 updateSpeed：收敛成 12 时绑定值可能没变化，需要手动把输入框写回去
+  if (isSpeed && parsed <= 0) {
+    const input = event?.target as { value?: unknown } | null | undefined
+    if (input) input.value = String(applied)
+  }
 }
 
 async function saveTemplateDraft() {

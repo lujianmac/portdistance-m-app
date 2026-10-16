@@ -97,11 +97,12 @@
           <header v-if="distance.portPoints.length" class="result-panel-header">
             <ion-item lines="full" class="speed-item">
               <ion-input
-                :value="String(distance.speed)"
+                :value="speedText"
                 :aria-label="t('distance.route.speedLabel')"
                 inputmode="decimal"
-                type="number"
+                type="number" enterkeyhint="done"
                 @ion-input="setSpeed"
+                @ion-blur="normalizeSpeed"
               />
               <span class="speed-unit">{{ t('common.unit.knotShort') }}</span>
             </ion-item>
@@ -360,7 +361,7 @@
                 :value="coordinate.latitude"
                 :label="t('distance.coordinate.latitude')"
                 label-placement="floating"
-                type="number"
+                type="number" enterkeyhint="done"
                 inputmode="decimal"
                 :placeholder="t('distance.coordinate.latitudePlaceholder')"
                 @ion-input="updateDecimal('latitude', $event)"
@@ -371,7 +372,7 @@
                 :value="coordinate.longitude"
                 :label="t('distance.coordinate.longitude')"
                 label-placement="floating"
-                type="number"
+                type="number" enterkeyhint="done"
                 inputmode="decimal"
                 :placeholder="t('distance.coordinate.longitudePlaceholder')"
                 @ion-input="updateDecimal('longitude', $event)"
@@ -390,7 +391,7 @@
                   :value="dms.latitude.degree"
                   :label="t('distance.coordinate.degree')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.latitudeDegreePlaceholder')"
                   @ion-input="updateDms('latitude', 'degree', $event)"
@@ -401,7 +402,7 @@
                   :value="dms.latitude.minute"
                   :label="t('distance.coordinate.minute')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.minutePlaceholder')"
                   @ion-input="updateDms('latitude', 'minute', $event)"
@@ -412,7 +413,7 @@
                   :value="dms.latitude.second"
                   :label="t('distance.coordinate.second')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.secondPlaceholder')"
                   @ion-input="updateDms('latitude', 'second', $event)"
@@ -441,7 +442,7 @@
                   :value="dms.longitude.degree"
                   :label="t('distance.coordinate.degree')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.longitudeDegreePlaceholder')"
                   @ion-input="updateDms('longitude', 'degree', $event)"
@@ -452,7 +453,7 @@
                   :value="dms.longitude.minute"
                   :label="t('distance.coordinate.minute')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.minutePlaceholder')"
                   @ion-input="updateDms('longitude', 'minute', $event)"
@@ -463,7 +464,7 @@
                   :value="dms.longitude.second"
                   :label="t('distance.coordinate.second')"
                   label-placement="floating"
-                  type="number"
+                  type="number" enterkeyhint="done"
                   inputmode="numeric"
                   :placeholder="t('distance.coordinate.secondPlaceholder')"
                   @ion-input="updateDms('longitude', 'second', $event)"
@@ -536,6 +537,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DistanceShareDialog from '@/components/distance/DistanceShareDialog.vue'
+import { DEFAULT_SPEED } from '@/config/runtime'
 import { useDistanceStore, type RecentDistanceCalculation } from '@/stores/distance'
 import { useEstiDeployStore } from '@/stores/esti-deploy'
 import { useMapStore } from '@/stores/map'
@@ -693,6 +695,13 @@ const map = useMapStore()
 
 const keyword = ref('')
 const searchFocused = ref(false)
+/**
+ * 航速输入框的显示文本。不能直接绑 `distance.speed`：那样清空输入框时（空串 →
+ * Number 得到 0 → store 回落到默认 12）最后一位数字会"删不掉"，永远留着一个 1/12。
+ * 这里保留用户正在输入的原始文本（允许中间态为空、为 "1."），只有解析出合法正数才写回 store，
+ * 失焦时再把非法/空文本收敛回 store 里的有效值。
+ */
+const speedText = ref(String(distance.speed))
 const coordinateOpen = ref(false)
 const coordinateError = ref('')
 const departureEditorOpen = ref(false)
@@ -845,8 +854,36 @@ function selectPort(port: PortInfo) {
 }
 
 function setSpeed(event: ValueEvent) {
-  distance.setSpeed(Number(event.detail.value || 0))
+  const raw = String(event.detail.value ?? '')
+  speedText.value = raw
+  const parsed = Number(raw)
+  /*
+   * 空串 / 0 / 非法值不当作"用户输入"写进 store，但也不能让 store 继续留着旧值：
+   * 光标还在框里（没失焦）时，页面上的航行时间与分享文案都是按 store 算的，
+   * 所以这两种情况直接按默认 12 节记账；输入框里保留用户删出来的空态，方便继续输入。
+   */
+  const usable = raw.trim() !== '' && Number.isFinite(parsed) && parsed > 0
+  distance.setSpeed(usable ? parsed : DEFAULT_SPEED)
 }
+
+/** 失焦收敛：空/0/非法一律回落到默认 12 节（与 store 的默认值一致），"07"/"1." 也顺手规范成 "7"/"1"。 */
+function normalizeSpeed() {
+  const parsed = Number(speedText.value)
+  if (speedText.value.trim() === '' || !Number.isFinite(parsed) || parsed <= 0) {
+    distance.setSpeed(DEFAULT_SPEED)
+  }
+  speedText.value = String(distance.speed)
+}
+
+// 外部改了航速（切换用户、从别处恢复）时同步显示文本；
+// 用数值比较避免把用户正在输入的 "07" / "1." 立刻改写成 "7" / "1"（会跳光标）。
+watch(() => distance.speed, (value) => {
+  // 输入框空着/非法时不要回写：那是用户正在重输（store 此刻记的是默认 12），
+  // 一回写就会把用户删空的框重新填成 "12"，又变成"删不掉"。
+  const parsed = Number(speedText.value)
+  const editing = speedText.value.trim() === '' || !Number.isFinite(parsed) || parsed <= 0
+  if (!editing && parsed !== value) speedText.value = String(value)
+})
 
 async function calculate() {
   await distance.calculate()

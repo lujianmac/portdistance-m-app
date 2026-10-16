@@ -143,6 +143,9 @@ function createEmptyPort(port: Partial<PortInfo>, taskType: BudgetPortTask = 'lo
   }
 }
 
+/** 航速的四个字段，供 updateSpeeds / normalizeDocument 统一做 0 值收敛。 */
+const SPEED_FIELDS = ['ballastFullSpeed', 'ballastEcoSpeed', 'ladenFullSpeed', 'ladenEcoSpeed'] as const
+
 function emptySpeeds(): BudgetSpeedProfile {
   return {
     ballastFullSpeed: DEFAULT_SPEED,
@@ -314,6 +317,28 @@ function isBudgetPortTask(value: unknown): value is BudgetPortTask {
   return ['ballast', 'load', 'discharge', 'bunker', 'canal', 'pass', 'routing', 'snug', 'repair', 'transit'].includes(String(value))
 }
 
+/**
+ * 载入的航速规范化：字段缺失 → 用新建默认值（12 节）；字段存在但是 0/负数 → 也用 12 节。
+ * 计算侧本来就用 `speedForPort(...) || DEFAULT_SPEED` 把 0 当 12，所以这里只是让界面显示
+ * 与计算结果一致，不会改变已存预算的航行时间。
+ */
+function normalizeLoadedSpeeds(value: unknown): BudgetSpeedProfile {
+  const input = (value || {}) as Record<string, unknown>
+  const base = emptySpeeds()
+  const pick = (field: keyof BudgetSpeedProfile) => {
+    const raw = input[field]
+    if (raw === undefined || raw === null || raw === '') return base[field]
+    const parsed = numberValue(raw)
+    return parsed > 0 ? parsed : DEFAULT_SPEED
+  }
+  return {
+    ballastFullSpeed: pick('ballastFullSpeed'),
+    ballastEcoSpeed: pick('ballastEcoSpeed'),
+    ladenFullSpeed: pick('ladenFullSpeed'),
+    ladenEcoSpeed: pick('ladenEcoSpeed'),
+  }
+}
+
 function normalizeDocument(value: unknown): VoyageBudgetDocument {
   const input = (value || {}) as Partial<VoyageBudgetContent>
   const startAt = String(input.portSequence?.startAt || isoNow())
@@ -323,7 +348,7 @@ function normalizeDocument(value: unknown): VoyageBudgetDocument {
     startAt,
     routeCalculated: Boolean(input.portSequence?.routeCalculated),
     mapRoute: input.portSequence?.mapRoute,
-    speeds: { ...base.speeds, ...(input.dailyFuelSpeed?.speeds || {}) },
+    speeds: normalizeLoadedSpeeds(input.dailyFuelSpeed?.speeds),
     fuel: { ...base.fuel, ...(input.dailyFuelSpeed?.fuel || {}) },
     prices: { ...base.prices, ...(input.fuelPrices?.prices || {}) },
     costs: { ...base.costs, ...(input.costs?.costs || {}) },
@@ -750,7 +775,13 @@ export const useEstiDeployStore = defineStore('esti-deploy', () => {
   }
 
   function updateSpeeds(patch: Partial<BudgetSpeedProfile>) {
-    Object.assign(document.value.speeds, patch)
+    // 航速不接受 0/负数：这里是最后一道闸，任何入口（页面输入、模板、恢复草稿）写进来都收敛成默认 12 节。
+    // 0 节会让航行时间除零/变无穷，界面上也会出现一个"看着像没填"的 0。
+    const next: Partial<BudgetSpeedProfile> = { ...patch }
+    SPEED_FIELDS.forEach((field) => {
+      if (field in next && numberValue(next[field]) <= 0) next[field] = DEFAULT_SPEED
+    })
+    Object.assign(document.value.speeds, next)
     recalculateRouteDays()
     recalculate()
   }
